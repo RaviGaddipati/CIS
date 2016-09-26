@@ -85,7 +85,7 @@ Currently, the operating time to complete the actual step of mastoidectomy is 15
   - While the surgeon drills, he/she is able to see progress along the surgical plan as well as receive haptic feedback whenever the drill tip approaches the critical structures to avoid. This feedback will also prevent the surgeon from actually pressing into the protected region.
   - Once the mastoidectomy is complete, the surgeon is able to continue with the rest of the procedure as planned.
 
-  ![Test image to include](Graphic_1.png "Sketch of Feedback")\\
+  ![Test image to include](Graphic_1.png "Sketch of Feedback")\
 
 ## B. Fully Automated Mastoidectomy
 
@@ -134,11 +134,19 @@ First, having a robot with active linkages permits the surgeon to have greater s
 
 Second, the active linkages also permits very precise encoding of the location of the drill tip. This allows for precise mapping of the drill tip to its location in the virtual model of the mastoid.
 
-The computer workstation integrates information about the probe's position from the robot and transforms it into the virtual world of the mastoid. This information will be displayed on a computer monitor. The probe is registered into this world by bringing the probe into contact with the markers in the mastoid and calculating the appropriate transformation. Below is a diagram of the entire system including the primary reference frames and their relationship to each other.
+The computer workstation integrates information about the probe's position from the robot and transforms it into the virtual world of the mastoid. This information will be displayed on a computer monitor. The probe is registered into this world by bringing the probe into contact with the markers in the mastoid and calculating the appropriate transformation. Below is a diagram of the entire system. (Diagram inspired by Lecture Notes)
+
+
+![Test image to include](System_Graphic.png "Sketch of System")\
 
 
 
+Below is a graphic which illustrates the key transformations and reference frames in the above system.
 
+![Test image to include](Reference_Frame.png "Sketch of System")\
+
+
+In the diagram, the key reference frames include B = Base of Robot, H = Drill Handle, T = Drill Tip, M = Mastoid Model. The key transformations/reference frames in this system parallel that of the systems described in class. The crucial step is to define the registration transformation between the robot reference frame (B) and the mastoid model (M). This is done by bringing the drill tip into contact with the three pins in the mastoid which have a known position in the mastoid model reference frame. This defines 3 vectors which can be used to complete the necessary frame transformation.
 
 During the actual operation, similar to the MAKO surgical robot, the virtual mastoid model on the monitor will display the progress of milling into the predefined operating path. As the surgeon approaches the border of the operating region, the physical robot will resist the surgeon's movements as well as change the highlighting of the model in the monitor to alert the surgeon. This work progresses until the entire mastoidectomy is complete.
 
