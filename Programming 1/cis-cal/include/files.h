@@ -23,15 +23,18 @@
 /**
  * One set of marker locations.
  */
+template<typename T=double>
 struct CalibrationFrame {
-    PointCloud<double> opt_marker_embase, opt_marker_calobj, em_marker_calobj;
+    PointCloud<T> opt_marker_embase, opt_marker_calobj, em_marker_calobj;
 };
 
 /**
  * @brief
  * Read and parse a calibration reading/body file. A Calibration Body file is just a readings file with
  * nframes = 1.
+ * @tparam Coordinate datatype
  */
+template<typename T=double>
 class CalibrationFile {
 
 public:
@@ -69,9 +72,9 @@ public:
 
 
         try {
-            nd = std::stoul(split_line[0]);
-            na = std::stoul(split_line[1]);
-            nc = std::stoul(split_line[2]);
+            nd = (T) std::stod(split_line[0]);
+            na = (T) std::stod(split_line[1]);
+            nc = (T) std::stod(split_line[2]);
         } catch (std::exception &e) {
             std::cerr << "Error parsing arguments in: " << line << std::endl;
             throw;
@@ -91,7 +94,7 @@ public:
         return _name;
     }
 
-    const CalibrationFrame &frame(size_t i = 0) const {
+    const CalibrationFrame<T> &frame(size_t i = 0) const {
         return _frames.at(i);
     }
 
@@ -99,13 +102,13 @@ public:
         return _frames.size();
     }
 
-    typename std::vector<CalibrationFrame>::const_iterator begin() const { return _frames.begin(); }
+    typename std::vector<CalibrationFrame<T>>::const_iterator begin() const { return _frames.begin(); }
 
-    typename std::vector<CalibrationFrame>::const_iterator end() const { return _frames.end(); }
+    typename std::vector<CalibrationFrame<T>>::const_iterator end() const { return _frames.end(); }
 
 private:
     std::string _name;
-    std::vector<CalibrationFrame> _frames;
+    std::vector<CalibrationFrame<T>> _frames;
 
     /**
  * @brief
@@ -114,10 +117,10 @@ private:
  * @param n number of lines to parse
  * @param target Target to add points to.
  */
-    void _parse_coordinates(std::istream &in, size_t n, PointCloud<double> &target) {
+    void _parse_coordinates(std::istream &in, size_t n, PointCloud<T> &target) {
         std::string line;
         std::vector<std::string> split_line;
-        std::vector<PointCloud<double>::Point> points;
+        std::vector<typename PointCloud<T>::Point> points;
         for (size_t i = 0; i < n; ++i) {
             if (!std::getline(in, line)) throw std::invalid_argument("Unexpected end of file.");
             line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
@@ -131,8 +134,8 @@ private:
 };
 
 // Convenience aliases
-using CalibrationBody = CalibrationFile;
-using CalibrationReadings = CalibrationFile;
+using CalibrationBody = CalibrationFile<double>;
+using CalibrationReadings = CalibrationFile<double>;
 
 
 TEST_CASE ("Cal Body file") {
@@ -141,7 +144,7 @@ TEST_CASE ("Cal Body file") {
     t << "1,2,\t3, NAME\n1,1 ,1\n2,2,2\n3,3,3\n4,4,4\n5,5,5\n6,6,6";
     t.close();
 
-    CalibrationFile cb(tmp_file);
+    CalibrationFile<> cb(tmp_file);
 
             CHECK(cb.frame().opt_marker_embase.size() == 1);
             CHECK(cb.frame().opt_marker_calobj.size() == 2);
@@ -185,7 +188,7 @@ TEST_CASE ("Cal Readings file") {
     t << "1,2,\t3,2, NAME\n1,1 ,1\n2,2,2\n3,3,3\n4,4,4\n5,5,5\n6,6,6\n1,1 ,1\n2,2,2\n3,3,3\n4,4,4\n5,5,5\n6,6,6";
     t.close();
 
-    CalibrationFile cb(tmp_file);
+    CalibrationFile<> cb(tmp_file);
             CHECK(cb.size() == 2);
 
             CHECK(cb.name() == "NAME");
