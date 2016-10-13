@@ -1,3 +1,6 @@
 [submodule "Programming 1/cis-cal/eigen"]
 	path = Programming 1/cis-cal/eigen
 	url = https://github.com/RaviGaddipati/eigen
+[submodule "Programming 1/cis-cal/doctest"]
+	path = Programming 1/cis-cal/doctest
+	url = https://github.com/RaviGaddipati/doctest
