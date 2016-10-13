@@ -1,6 +1,13 @@
-//
-// Created by gaddra on 10/12/16.
-//
+/**
+ * @author Ravi Gaddipati
+ * @date October 13, 2016
+ * rgaddip1@jhu.edu
+ *
+ * @brief
+ * Represents a 3D Point Cloud as an Array of 3D Points.
+ *
+ * @file
+ */
 
 #ifndef CIS_CAL_POINTCLOUD_H
 #define CIS_CAL_POINTCLOUD_H
@@ -8,6 +15,10 @@
 #include "Eigen"
 #include <vector>
 
+/**
+ * @brief
+ * Represents a 3D point cloud.
+ */
 template<typename T=double>
 class PointCloud {
 public:
@@ -16,20 +27,42 @@ public:
 
     PointCloud(){}
 
+    /**
+     * @brief
+     * Create a point cloud from a vector of points
+     * @param points
+     */
     PointCloud(const std::vector<Point> &points) {
         add_points(points);
     }
 
+    /**
+     * @brief
+     * Returns the i'th added point.
+     * @param i
+     * @return Point at i
+     */
     Point at(size_t i) const {
         if (i >= _cloud_matrix.rows()) throw std::invalid_argument("Invalid index " + std::to_string(i));
         return _cloud_matrix.row(i);
     }
 
+    /**
+     * @brief
+     * Add a point to the cloud.
+     * @param point
+     */
     void add_point(const Point &point) {
         _cloud_matrix.conservativeResize(_cloud_matrix.rows() + 1, Eigen::NoChange);
         _cloud_matrix.row(_cloud_matrix.rows() - 1) = point;
     }
 
+    /**
+     * @brief
+     * Add a list of points of the cloud. More effecient than multiple add_points
+     * as resize only happens once.
+     * @param points
+     */
     void add_points(const std::vector<Point> &points) {
         size_t r = _cloud_matrix.rows();
         _cloud_matrix.conservativeResize(_cloud_matrix.rows() + points.size(), Eigen::NoChange);
@@ -38,11 +71,23 @@ public:
         }
     }
 
+    /**
+     * @brief
+     * Returns the centroid.
+     * P = sum(all_points) / num_points
+     * @return Centroid Point
+     */
     Point centroid() const {
         Point cent(_cloud_matrix.col(0).sum(), _cloud_matrix.col(1).sum(), _cloud_matrix.col(2).sum());
         return cent /= _cloud_matrix.rows();
     }
 
+    /**
+     * @brief
+     * Add the given point to all points.
+     * @param p Point to add
+     * @return *this
+     */
     PointCloud<T> operator+=(Point p) {
         _cloud_matrix.col(0) += p(0);
         _cloud_matrix.col(1) += p(1);
@@ -50,6 +95,12 @@ public:
         return *this;
     }
 
+    /**
+     * @brief
+     * Subtract the given point from all points.
+     * @param p Point to subtract
+     * @return *this
+     */
     PointCloud<T> operator-=(Point p) {
         _cloud_matrix.col(0) -= p(0);
         _cloud_matrix.col(1) -= p(1);
@@ -57,22 +108,59 @@ public:
         return *this;
     }
 
-    PointCloud<T> center() {
+    /**
+     * @brief
+     * Centers all the points around the centroid. Returns new PointCloud.
+     * pc -= this->centroid()
+     * @return Centered PointCloud
+     */
+    PointCloud<T> center() const {
         PointCloud<T> ret(*this);
         ret -= centroid();
         return ret;
     }
 
+    /**
+     * @brief
+     * Centers all the points around the centroid. Modifies original PointCloud.
+     * *this -= this->centroid()
+     * @return *this
+     */
+    PointCloud<T> center_self() {
+        *this -= centroid();
+        return *this;
+    }
+
+    /**
+     * @return number of points in cloud.
+     */
     size_t size() const {
         return _cloud_matrix.rows();
     }
 
+    /**
+     * @brief
+     * Get all the points.
+     * @return Eigen::Array of points
+     */
     const PointStore &point_store() const {
         return _cloud_matrix;
     }
 
+    /**
+     * @brief
+     * Combine two point clouds into a single point cloud.
+     * @param pc
+     * @return PointCloud with all points of both sets.
+     */
+    PointCloud<T> operator+(const PointCloud<T> &pc) const {
+        PointCloud<T> ret(*this);
+        ret.add_points(pc.point_store());
+        return ret;
+    }
+
 private:
-    PointStore _cloud_matrix;
+    PointStore _cloud_matrix; // Stores all the points.
 };
 
 template <typename T>
