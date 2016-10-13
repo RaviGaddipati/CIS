@@ -1,13 +1,19 @@
-#include <iostream>
-#include "pointcloud.h"
-
 #define DOCTEST_CONFIG_IMPLEMENT // User controlled test execution
 
+#include <iostream>
+#include <doctest.h>
+#include "pointcloud.h"
 
-int main() {
-    std::cout << "Hello, World!" << std::endl;
-    PointCloud<> p;
-    PointCloud<>::Point t;
-    p.add_point(t);
+int main(const int argc, const char *argv[]) {
+    if (argc > 1) {
+        if (!strcmp(argv[1], "test")) {
+            doctest::Context doc(argc, argv);
+            doc.setOption("no-breaks", true);
+            doc.setOption("abort-after", 10);
+            doc.setOption("sort", "name");
+            return doc.run();
+        }
+    }
+
     return 0;
 }

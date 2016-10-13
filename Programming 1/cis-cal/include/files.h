@@ -11,6 +11,7 @@
 #include <vector>
 #include <iostream>
 #include "utils.h"
+#include "pointcloud.h"
 
 class CalibrationBody {
 
@@ -42,20 +43,9 @@ public:
         _name = split_line[3];
 
         int i;
-        for (i = 0; i < _Nd; ++i) {
-            if (!std::getline(in, line)) throw std::invalid_argument("Unexpected end of file.");
-
-        }
-
-        for (i = 0; i < _Na; ++i) {
-            if (!std::getline(in, line)) throw std::invalid_argument("Unexpected end of file.");
-
-        }
-
-        for (i = 0; i < _Nc; ++i) {
-            if (!std::getline(in, line)) throw std::invalid_argument("Unexpected end of file.");
-
-        }
+        _parse_coordinates(in, _Nd, _d);
+        _parse_coordinates(in, _Na, _a);
+        _parse_coordinates(in, _Nc, _c);
     }
 
 private:
@@ -64,6 +54,19 @@ private:
             _Nd, // Number of optical markers on EM base
             _Na, // number of optical markers on calibration object
             _Nc; // number EM markers on calibration object
+    PointCloud<double> _d, _a, _c;
+
+    void _parse_coordinates(std::istream &in, size_t n, PointCloud<double> &target) {
+        std::string line;
+        std::vector<std::string> split_line;
+        for (suze_t i = 0; i < n; ++i) {
+            if (!std::getline(in, line)) throw std::invalid_argument("Unexpected end of file.");
+            line.erase(std::remove(line.begin(), line.end(), std::isspace), line.end());
+            split(line, ',', split_line);
+            if (split_line.size() != 3) throw std::invalid_argument ("Expected 3 values in line: " + line);
+            target.add_point({std::stod(split_line[0]), std::stod(split_line[1]), std::stod(split_line[2])});
+        }
+    }
 
 };
 
