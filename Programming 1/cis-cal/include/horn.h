@@ -24,7 +24,7 @@ Eigen::Quaternion<T> find_rotation(const PointCloud<T> &cloud1, const PointCloud
         tmp.col(1) = pc1.at(i);
         tmp.col(2) = pc1.at(i);
 
-        // Array wise multiplication to get h
+        // Array-wise multiplication to get h
         tmp.row(0).array() *= pc2.at(i).array();
         tmp.row(1).array() *= pc2.at(i).array();
         tmp.row(2).array() *= pc2.at(i).array();
@@ -45,10 +45,9 @@ Eigen::Quaternion<T> find_rotation(const PointCloud<T> &cloud1, const PointCloud
     es.compute(G);
     if (es.info() != Eigen::Success) throw std::invalid_argument("Error computing eigenvalues.");
 
-    // eigenvector corresponding to biggest eigenvalue is quternion
+    // eigenvector corresponding to biggest eigenvalue is quaternion
     typename Eigen::Matrix<T, 4, 1>::Index max_eigen_row;
     es.eigenvalues().maxCoeff(&max_eigen_row);
-
     return Eigen::Quaternion<T>{es.eigenvectors().col(max_eigen_row)};
 }
 
@@ -56,6 +55,7 @@ TEST_CASE ("Horn") {
     PointCloud<double> pc1{{{1, 2, 3}, {2, 3, 4}, {3, 4, 5}}};
     PointCloud<double> pc2{{{9, 8, 7}, {8, 7, 6}, {7, 6, 5}}};
     auto q = find_rotation(pc1, pc2);
+    std::cout << q.matrix();
 }
 
 #endif //CIS_CAL_HORN_H
