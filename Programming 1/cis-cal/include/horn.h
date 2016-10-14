@@ -16,19 +16,15 @@ Eigen::Quaternion<T> find_rotation(const PointCloud<T> &cloud1, const PointCloud
     const auto pc2 = cloud2.center();
     const auto len = pc1.size();
 
-    Eigen::Matrix<T, 3, 3> H, tmp;
-    H.setZero();
-    for (int i = 0; i < len; ++i) {
-        // Set all cols to (ax,ay,az)
-        tmp.col(0) = pc1.at(i);
-        tmp.col(1) = pc1.at(i);
-        tmp.col(2) = pc1.at(i);
+    Eigen::Matrix<T, 3, 3>
+            H = Eigen::Matrix<T, 3, 3>::Zero(), // Sum of all (x,y,z) pairs
+            t1 = Eigen::Matrix<T, 3, 3>::Zero(), // Temporary for matrix multiplication
+            t2 = Eigen::Matrix<T, 3, 3>::Zero();
 
-        // Array-wise multiplication to get h
-        tmp.row(0).array() *= pc2.at(i).array();
-        tmp.row(1).array() *= pc2.at(i).array();
-        tmp.row(2).array() *= pc2.at(i).array();
-        H += tmp;
+    for (int i = 0; i < len; ++i) {
+        t1.col(0) = pc1.at(i);
+        t2.row(0) = pc2.at(i);
+        H += t1 * t2;
     }
 
     // 4x4 Symmetric matrix
@@ -43,7 +39,7 @@ Eigen::Quaternion<T> find_rotation(const PointCloud<T> &cloud1, const PointCloud
     // Find eigenvalues/eigenvectors
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix<T, 4, 4>> es;
     es.compute(G);
-    if (es.info() != Eigen::Success) throw std::invalid_argument("Error computing eigenvalues.");
+    if (es.info() != Eigen::Success) throw std::runtime_error("Error computing eigenvalues.");
 
     // eigenvector corresponding to biggest eigenvalue is quaternion
     typename Eigen::Matrix<T, 4, 1>::Index max_eigen_row;
@@ -52,10 +48,20 @@ Eigen::Quaternion<T> find_rotation(const PointCloud<T> &cloud1, const PointCloud
 }
 
 TEST_CASE ("Horn") {
-    PointCloud<double> pc1{{{1, 2, 3}, {2, 3, 4}, {3, 4, 5}}};
-    PointCloud<double> pc2{{{9, 8, 7}, {8, 7, 6}, {7, 6, 5}}};
+    PointCloud<double> pc1{{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}};
+    Eigen::Transform<double, 3, Eigen::Affine> t(
+            Eigen::AngleAxis<double>(0.3 * 3.14159265359, Eigen::Vector3d::UnitX()) *
+            Eigen::AngleAxis<double>(0.5 * 3.14159265359, Eigen::Vector3d::UnitY()) *
+            Eigen::AngleAxis<double>(0.8 * 3.14159265359, Eigen::Vector3d::UnitZ())
+    );
+    PointCloud<double> pc2;
+    for (size_t i = 0; i < pc1.size(); ++i) {
+        pc2.add_point(t * pc1.at(i));
+    }
+
     auto q = find_rotation(pc1, pc2);
-    std::cout << q.matrix();
+
+    std::cout << q.toRotationMatrix() << std::endl << std::endl << t.rotation();
 }
 
 #endif //CIS_CAL_HORN_H
