@@ -45,20 +45,30 @@ Eigen::Transform<T, 3, Eigen::Affine> cloud_to_cloud(const PointCloud<T> &cloud1
     // eigenvector corresponding to biggest eigenvalue is quaternion
     typename Eigen::Matrix<T, 4, 1>::Index max_eigen_row;
     es.eigenvalues().maxCoeff(&max_eigen_row);
-
     Eigen::Quaternion<T> rot{es.eigenvectors().col(max_eigen_row)};
-    Eigen::Translation<T, 3> trans(cloud2.centroid() - (rot.toRotationMatrix() * cloud1.centroid()));
-    return Eigen::Transform<T, 3, Eigen::Affine>(rot * trans);
+
+    Eigen::Translation<T, 3> trans(cloud2.centroid() - (rot * cloud1.centroid()));
+    return Eigen::Transform<T, 3, Eigen::Affine>(trans * rot); // Applies rotation first
 }
 
 TEST_CASE ("Horn") {
-    PointCloud<double> pc1{{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}};
+    // Group of points translated to (1,1,1)
+    PointCloud<double> pc1{{{1, 2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}}};
+    {
+        Eigen::Translation<double, 3> trans(1, 1, 1);
+        for (int i = 0; i < pc1.size(); ++i) {
+            pc1.set(i, trans * pc1.at(i));
+        }
+    }
+
+
     Eigen::Transform<double, 3, Eigen::Affine> t(
-            Eigen::AngleAxis<double>(1, Eigen::Vector3d::UnitX()) *
-            Eigen::AngleAxis<double>(2, Eigen::Vector3d::UnitY()) *
+            Eigen::Translation<double, 3>(1, 2, 3) *
             Eigen::AngleAxis<double>(3, Eigen::Vector3d::UnitZ()) *
-            Eigen::Translation<double, 3>(1, 2, 3)
+            Eigen::AngleAxis<double>(2, Eigen::Vector3d::UnitY()) *
+            Eigen::AngleAxis<double>(1, Eigen::Vector3d::UnitX())
     );
+
     PointCloud<double> pc2;
     for (size_t i = 0; i < pc1.size(); ++i) {
         pc2.add_point(t * pc1.at(i));
@@ -66,8 +76,14 @@ TEST_CASE ("Horn") {
 
     auto q = cloud_to_cloud(pc1, pc2);
 
-    std::cout << q.rotation() << std::endl << q.translation() << std::endl << std::endl << t.rotation() << std::endl
-              << t.translation();
+
+    std::cout << q.rotation().eulerAngles(2, 1, 0) << std::endl << q.translation() << std::endl << std::endl
+              << t.rotation().eulerAngles(2, 1, 0) << std::endl << t.translation();
+
+}
+
+TEST_CASE ("play") {
+    PointCloud<double> pc1{{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}};
 }
 
 #endif //CIS_CAL_HORN_H

@@ -49,6 +49,17 @@ public:
 
     /**
      * @brief
+     * Refrence to a specific point
+     * @param i index of point to retrieve
+     * @return Point ref
+     */
+    void set(const size_t i, const Point &p) {
+        if (i >= _cloud_matrix.rows()) throw std::range_error("Index out of range.");
+        _cloud_matrix.row(i) = p;
+    }
+
+    /**
+     * @brief
      * Add a point to the cloud.
      * @param point
      */
