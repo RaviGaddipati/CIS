@@ -20,54 +20,68 @@
  * @brief
  * Given two Point clouds, compute the transformation from cloud1 to cloud2 using
  * Horn's method.
- * @param cloud1 PointCloud
- * @param cloud2 PointCloud
- * @return Eigen::Transform, including rotational and translational component
+ * @param cloud1 PointCloud 1
+ * @param cloud2 PointCloud 2
+ * @return Eigen::Transform from cloud1 to cloud2, including rotational and translational component
  */
 template<typename T>
-Eigen::Transform<T, 3, Eigen::Affine> cloud_to_cloud(const PointCloud<T> &cloud1, const PointCloud<T> &cloud2) {
-    if (cloud1.size() != cloud2.size()) throw std::invalid_argument("Point clouds are different sizes.");
+Eigen::Transform<T, 3, Eigen::Affine> cloud_to_cloud(PointCloud<T> &pc1, PointCloud<T> &pc2) {
+    if (pc1.size() != pc2.size()) throw std::invalid_argument("Point clouds are different sizes.");
     // Center both clouds on origin
-    const auto pc1 = cloud1.center();
-    const auto pc2 = cloud2.center();
+    const auto cloud1_centroid = pc1.centroid();
+    const auto cloud2_centroid = pc2.centroid();
+    pc1.center_self();
+    pc2.center_self();
     const auto len = pc1.size();
 
-    Eigen::Matrix<T, 3, 3>
-            H = Eigen::Matrix<T, 3, 3>::Zero(), // Sum of all (x,y,z) pairs
-            t1 = Eigen::Matrix<T, 3, 3>::Zero(), // Temporary for matrix multiplication
-            t2 = Eigen::Matrix<T, 3, 3>::Zero();
+    // Put in try-catch so we can restore original clouds in case of error
+    try {
+        Eigen::Matrix<T, 3, 3>
+                H = Eigen::Matrix<T, 3, 3>::Zero(), // Sum of all (x,y,z) pairs
+                t1 = Eigen::Matrix<T, 3, 3>::Zero(), // Temporary for matrix multiplication
+                t2 = Eigen::Matrix<T, 3, 3>::Zero();
 
-    for (int i = 0; i < len; ++i) {
-        t1.col(0) = pc1.at(i);
-        t2.row(0) = pc2.at(i);
-        H += t1 * t2;
+        // Build H-matrix
+        for (int i = 0; i < len; ++i) {
+            t1.col(0) = pc1.at(i);
+            t2.row(0) = pc2.at(i);
+            H += t1 * t2;
+        }
+
+        // 4x4 Symmetric matrix
+        Eigen::Matrix<T, 4, 4> G;
+        Eigen::Matrix<T, 3, 1> delta = {H(1, 2) - H(2, 1),
+                                        H(2, 0) - H(0, 2),
+                                        H(0, 1) - H(1, 0)};
+        G(0, 0) = H.trace();
+        G.block(0, 1, 1, 3) = delta.transpose();
+        G.block(1, 0, 3, 1) = delta;
+        G.block(1, 1, 3, 3) = H + H.transpose();
+        G.block(1, 1, 3, 3) -= H.trace() * Eigen::Matrix<T, 3, 3>::Identity();
+
+        // Find eigenvalues/eigenvectors
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix<T, 4, 4>> es;
+        es.compute(G);
+        if (es.info() != Eigen::Success) throw std::runtime_error("Error computing eigenvalues.");
+
+        // eigenvector corresponding to biggest eigenvalue is quaternion
+        typename Eigen::Matrix<T, 4, 1>::Index max_eigen_row;
+        es.eigenvalues().maxCoeff(&max_eigen_row);
+        const auto &eig_vec = es.eigenvectors().col(max_eigen_row);
+        // Can't pass vec directly since Quaternion interprets as quat as [x,y,z,w]
+        Eigen::Quaternion<T> rot{eig_vec(0), eig_vec(1), eig_vec(2), eig_vec(3)};
+
+        Eigen::Translation<T, 3> trans(cloud2_centroid - (rot * cloud1_centroid));
+        // Restore original point clouds
+        pc1 += cloud1_centroid;
+        pc2 += cloud2_centroid;
+        return Eigen::Transform<T, 3, Eigen::Affine>(trans * rot); // Applies rotation first
+
+    } catch (std::exception &e) {
+        pc1 += cloud1_centroid;
+        pc2 += cloud2_centroid;
+        throw;
     }
-
-    // 4x4 Symmetric matrix
-    Eigen::Matrix<T, 4, 4> G;
-    Eigen::Matrix<T, 3, 1> delta = {H(1, 2) - H(2, 1),
-                                    H(2, 0) - H(0, 2),
-                                    H(0, 1) - H(1, 0)};
-    G(0, 0) = H.trace();
-    G.block(0, 1, 1, 3) = delta.transpose();
-    G.block(1, 0, 3, 1) = delta;
-    G.block(1, 1, 3, 3) = H + H.transpose();
-    G.block(1, 1, 3, 3) -= H.trace() * Eigen::Matrix<T, 3, 3>::Identity();
-
-    // Find eigenvalues/eigenvectors
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix<T, 4, 4>> es;
-    es.compute(G);
-    if (es.info() != Eigen::Success) throw std::runtime_error("Error computing eigenvalues.");
-
-    // eigenvector corresponding to biggest eigenvalue is quaternion
-    typename Eigen::Matrix<T, 4, 1>::Index max_eigen_row;
-    es.eigenvalues().maxCoeff(&max_eigen_row);
-    const auto &eig_vec = es.eigenvectors().col(max_eigen_row);
-    // Can't pass vec directly since Quaternion interprets as quat as [x,y,z,w]
-    Eigen::Quaternion<T> rot{eig_vec(0), eig_vec(1), eig_vec(2), eig_vec(3)};
-
-    Eigen::Translation<T, 3> trans(cloud2.centroid() - (rot * cloud1.centroid()));
-    return Eigen::Transform<T, 3, Eigen::Affine>(trans * rot); // Applies rotation first
 }
 
 TEST_CASE ("Horn cloud-to-cloud") {
@@ -94,12 +108,17 @@ TEST_CASE ("Horn cloud-to-cloud") {
     }
 
     // Calculate transformation
+    auto pc1_cpy = pc1;
+    auto pc2_cpy = pc2;
     auto estimated = cloud_to_cloud(pc1, pc2);
+    // Make sure original clouds is restored
+            CHECK(pc1_cpy.point_store().matrix().isApprox(pc1.point_store().matrix()));
+            CHECK(pc2_cpy.point_store().matrix().isApprox(pc2.point_store().matrix()));
 
     // isApprox because floating point
             CHECK(estimated.rotation().isApprox(trans.rotation()));
             CHECK(estimated.translation().isApprox(trans.translation()));
-
+    // Restore original pointcloud
 }
 
 #endif //CIS_CAL_HORN_H
