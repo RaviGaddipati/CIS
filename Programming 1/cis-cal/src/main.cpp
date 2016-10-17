@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <doctest.h>
+#include "distortion_calibration.h"
 #include "pointcloud.h"
 #include "files.h"
 #include "horn.h"
