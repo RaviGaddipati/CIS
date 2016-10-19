@@ -98,6 +98,10 @@ public:
         return _frames.at(i);
     }
 
+    CalibrationFrame<T> &operator[](size_t i) {
+        return _frames[i];
+    }
+
     size_t size() const {
         return _frames.size();
     }
