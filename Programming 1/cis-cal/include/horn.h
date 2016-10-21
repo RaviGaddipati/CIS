@@ -28,9 +28,9 @@ template<typename T>
 Eigen::Transform<T, 3, Eigen::Affine> cloud_to_cloud(const PointCloud<T> &cloud1, const PointCloud<T> &cloud2) {
     if (cloud1.size() != cloud2.size()) throw std::invalid_argument("Point clouds are different sizes.");
     // Center both clouds on origin
-    const auto pc1 = cloud1.center();
-    const auto pc2 = cloud2.center();
-    const auto len = pc1.size();
+    const auto len = cloud1.size();
+    const auto c1_centroid = cloud1.centroid();
+    const auto c2_centroid = cloud2.centroid();
 
     Eigen::Matrix<T, 3, 3>
             H = Eigen::Matrix<T, 3, 3>::Zero(), // Sum of all (x,y,z) pairs
@@ -39,8 +39,8 @@ Eigen::Transform<T, 3, Eigen::Affine> cloud_to_cloud(const PointCloud<T> &cloud1
 
     // Build H-matrix
     for (int i = 0; i < len; ++i) {
-        t1.col(0) = pc1.at(i);
-        t2.row(0) = pc2.at(i);
+        t1.col(0) = cloud1.at(i) - c1_centroid;
+        t2.row(0) = cloud2.at(i) - c2_centroid;
         H += t1 * t2;
     }
 
@@ -58,7 +58,10 @@ Eigen::Transform<T, 3, Eigen::Affine> cloud_to_cloud(const PointCloud<T> &cloud1
     // Find eigenvalues/eigenvectors
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix<T, 4, 4>> es;
     es.compute(G);
-    if (es.info() != Eigen::Success) throw std::runtime_error("Error computing eigenvalues.");
+
+    if (es.info() != Eigen::Success) {
+        throw std::runtime_error("Error computing eigenvalues: " + std::to_string(es.info()));
+    }
 
     // eigenvector corresponding to biggest eigenvalue is quaternion
     typename Eigen::Matrix<T, 4, 1>::Index max_eigen_row;
@@ -67,7 +70,7 @@ Eigen::Transform<T, 3, Eigen::Affine> cloud_to_cloud(const PointCloud<T> &cloud1
     // Can't pass vec directly since Quaternion interprets as quat as [x,y,z,w]
     Eigen::Quaternion<T> rot{eig_vec(0), eig_vec(1), eig_vec(2), eig_vec(3)};
 
-    Eigen::Translation<T, 3> trans(cloud2.centroid() - (rot * cloud1.centroid()));
+    Eigen::Translation<T, 3> trans(c2_centroid - (rot * c1_centroid));
 
     return Eigen::Transform<T, 3, Eigen::Affine>(trans * rot); // Applies rotation first
 }
