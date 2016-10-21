@@ -8,8 +8,20 @@
 
 //Use this header file to define the operations necessary to complete the pivot calibration
 
-template<T>
-void pivot_calibration(const std::string &em_pivot_file, const std::sting &opt_pivot_file) {
+template<typename T>
+Eigen::Matrix<T, 3, 1> pivot_calibration(const std::string reading_file, const Eigen::Matrix<T, 3, 1> post_position) {
+    pivot_calibration(CalibrationFile<T>(reading_file), post_position);
+};
+
+/**
+ * Given a Calibration file with multiple frames and the location of a post,
+ * return the vector from the first frame to the tip.
+ * @param readings
+ * @return
+ */
+template<typename T>
+Eigen::Matrix<T, 3, 1>
+pivot_calibration(const CalibrationFile <T> &readings, const Eigen::Matrix<T, 3, 1> post_position) {
 
     //Read the data from each pivot calibration file
     //NOTE: The existing files.h is currently not structured to accept these general data files and

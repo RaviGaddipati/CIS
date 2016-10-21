@@ -10,17 +10,18 @@
 #include "files.h"
 #include "horn.h"
 //Use this header file to define the work needed to determine the expected values for Ci on calibration object
+template<typename T>
+void distortion_calibration(const std::string body_file, const std::string readings_file) {
+    distortion_calibration(CalibrationFile<T>(body_file), CalibrationFile<T>(readings_file));
+}
 
 template<typename T>
-void distortion_calibration(const std::string &file_body, const std::string &file_readings) {
-    //Read in the calibration body details and calibration readings using files.h
-    CalibrationFile<T> body(file_body);
-    CalibrationFile<T> readings(file_readings);
+void distortion_calibration(const CalibrationFile<T> &body, const CalibrationFile<T> &readings) {
 
     //Point clouds from body object
-    PointCloud<T> &d = body[0].opt_marker_embase;
-    PointCloud<T> &a = body[0].opt_marker_calobj;
-    PointCloud<T> &c = body[0].em_marker_calobj;
+    const PointCloud<T> &d = body.frame().opt_marker_embase;
+    const PointCloud<T> &a = body.frame().opt_marker_calobj;
+    const PointCloud<T> &c = body.frame().em_marker_calobj;
 
 
 
@@ -28,10 +29,10 @@ void distortion_calibration(const std::string &file_body, const std::string &fil
     Eigen::Transform<T, 3, Eigen::Affine> F_A, F_D;
     for(int i = 0; i < readings.size(); i++) {
         //Estimate F_A
-        PointCloud<T> &A = readings[i].opt_marker_calobj;
+        const PointCloud<T> &A = readings.frame(i).opt_marker_calobj;
         F_A = cloud_to_cloud(a, A);
         //Estimate F_D
-        PointCloud<T> &D = readings[i].opt_marker_embase;
+        const PointCloud<T> &D = readings.frame(i).opt_marker_embase;
         F_D = cloud_to_cloud(d, D);
         //Compute Theoretical C_i
         std::cout << F_A.rotation() << std::endl;

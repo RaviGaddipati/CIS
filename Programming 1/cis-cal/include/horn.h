@@ -25,13 +25,11 @@
  * @return Eigen::Transform from cloud1 to cloud2, including rotational and translational component
  */
 template<typename T>
-Eigen::Transform<T, 3, Eigen::Affine> cloud_to_cloud(PointCloud<T> &pc1, PointCloud<T> &pc2) {
-    if (pc1.size() != pc2.size()) throw std::invalid_argument("Point clouds are different sizes.");
+Eigen::Transform<T, 3, Eigen::Affine> cloud_to_cloud(const PointCloud<T> &cloud1, const PointCloud<T> &cloud2) {
+    if (cloud1.size() != cloud2.size()) throw std::invalid_argument("Point clouds are different sizes.");
     // Center both clouds on origin
-    const auto cloud1_centroid = pc1.centroid();
-    const auto cloud2_centroid = pc2.centroid();
-    pc1.center_self();
-    pc2.center_self();
+    const auto pc1 = cloud1.center();
+    const auto pc2 = cloud2.center();
     const auto len = pc1.size();
 
     Eigen::Matrix<T, 3, 3>
@@ -45,10 +43,6 @@ Eigen::Transform<T, 3, Eigen::Affine> cloud_to_cloud(PointCloud<T> &pc1, PointCl
         t2.row(0) = pc2.at(i);
         H += t1 * t2;
     }
-
-    // Restore original point clouds
-    pc1 += cloud1_centroid;
-    pc2 += cloud2_centroid;
 
     // 4x4 Symmetric matrix
     Eigen::Matrix<T, 4, 4> G;
@@ -73,7 +67,7 @@ Eigen::Transform<T, 3, Eigen::Affine> cloud_to_cloud(PointCloud<T> &pc1, PointCl
     // Can't pass vec directly since Quaternion interprets as quat as [x,y,z,w]
     Eigen::Quaternion<T> rot{eig_vec(0), eig_vec(1), eig_vec(2), eig_vec(3)};
 
-    Eigen::Translation<T, 3> trans(cloud2_centroid - (rot * cloud1_centroid));
+    Eigen::Translation<T, 3> trans(cloud2.centroid() - (rot * cloud1.centroid()));
 
     return Eigen::Transform<T, 3, Eigen::Affine>(trans * rot); // Applies rotation first
 }
