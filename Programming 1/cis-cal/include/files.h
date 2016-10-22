@@ -20,144 +20,278 @@
 #include "utils.h"
 #include "pointcloud.h"
 
-/**
- * One set of marker locations.
- */
-template<typename T=double>
-struct CalibrationFrame {
-    PointCloud<T> opt_marker_embase, opt_marker_calobj, em_marker_calobj;
-};
 
-/**
- * @brief
- * Read and parse a calibration reading/body file. A Calibration Body file is just a readings file with
- * nframes = 1.
- * @tparam Coordinate datatype
- */
-template<typename T=double>
-class CalibrationFile {
+namespace cis {
 
-public:
+    template<typename T>
+    class File {
+    public:
 
-    CalibrationFile(const std::string &filename) {
-        open(filename);
-    }
-
-    /**
-     * @brief
-     * Load the point clouds in the file.
-     * @param filename
-     */
-    void open(const std::string &filename) {
-        std::ifstream in(filename);
-        if (!in.good()) throw std::invalid_argument("Error opening file: " + filename);
-
-        std::string line;
-        size_t nd, na, nc, nframes;
-
-        // Header information line
-        std::getline(in, line);
-        line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
-        auto split_line = split(line, ',');
-
-        if (split_line.size() == 4) {
-            // Cal body file
-            nframes = 1;
-            _name = split_line[3];
-        } else if (split_line.size() == 5) {
-            // Cal readings file
-            nframes = std::stoul(split_line[3]);
-            _name = split_line[4];
-        } else throw std::invalid_argument("Expected line of format \"N_D, N_A, N_C, [N_FRAMES], NAME\" got " + line);
-
-
-        try {
-            nd = (T) std::stod(split_line[0]);
-            na = (T) std::stod(split_line[1]);
-            nc = (T) std::stod(split_line[2]);
-        } catch (std::exception &e) {
-            std::cerr << "Error parsing arguments in: " << line << std::endl;
-            throw;
+        virtual void open(std::string file) {
+            std::ifstream in(file);
+            if (!in.good()) throw std::invalid_argument("Invalid file: " + file);
+            open(in);
         }
 
-        _frames.clear();
-        for (size_t i = 0; i < nframes; ++i) {
-            _frames.emplace_back();
-            auto &frame = _frames.back();
-            _parse_coordinates(in, nd, frame.opt_marker_embase);
-            _parse_coordinates(in, na, frame.opt_marker_calobj);
-            _parse_coordinates(in, nc, frame.em_marker_calobj);
+        virtual void open(std::istream &) = 0;
+
+        virtual size_t size() {
+            return _clouds.size() > 0 ? _clouds[0].size() : 0;
+        };
+
+        virtual std::string name() const {
+            return _name;
+        };
+        virtual const std::vector<PointCloud < T>> &
+
+        get(const size_t i) const {
+            return _clouds.at(i);
         }
-    }
 
-    std::string name() const {
-        return _name;
-    }
+    protected:
+        std::string _name;
+        std::vector<std::vector<PointCloud < T>>>
+        _clouds;
 
-    const CalibrationFrame<T> &frame(size_t i = 0) const {
-        return _frames.at(i);
-    }
+        /**
+        * @brief
+        * Parses the n next lines of the stream.
+        * @param in input stream
+        * @param n number of lines to parse
+        * @param target Target to add points to.
+        */
+        void _parse_coordinates(std::istream &in, size_t n, PointCloud <T> &target) {
+            std::string line;
+            std::vector<std::string> split_line;
+            std::vector<typename PointCloud<T>::Point> points;
+            for (size_t i = 0; i < n; ++i) {
+                if (!std::getline(in, line)) throw std::invalid_argument("Unexpected end of file.");
+                line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+                split(line, ',', split_line);
+                if (split_line.size() != 3) throw std::invalid_argument("Expected 3 values in line: " + line);
+                points.emplace_back(std::stod(split_line[0]), std::stod(split_line[1]), std::stod(split_line[2]));
+            }
+            target.add_points(points);
+        }
 
-    CalibrationFrame<T> &operator[](size_t i) {
-        return _frames[i];
-    }
+    };
 
-    size_t size() const {
-        return _frames.size();
-    }
+    template<typename T>
+    class CalBody : public File<T> {
+    public:
+        using File<T>::open;
 
-    typename std::vector<CalibrationFrame<T>>::const_iterator begin() const { return _frames.begin(); }
+        CalBody() {}
 
-    typename std::vector<CalibrationFrame<T>>::const_iterator end() const { return _frames.end(); }
+        CalBody(std::string file) {
+            this->open(file);
+        }
 
-private:
-    std::string _name;
-    std::vector<CalibrationFrame<T>> _frames;
-
-    /**
- * @brief
- * Parses the n next lines of the stream.
- * @param in input stream
- * @param n number of lines to parse
- * @param target Target to add points to.
- */
-    void _parse_coordinates(std::istream &in, size_t n, PointCloud<T> &target) {
-        std::string line;
-        std::vector<std::string> split_line;
-        std::vector<typename PointCloud<T>::Point> points;
-        for (size_t i = 0; i < n; ++i) {
-            if (!std::getline(in, line)) throw std::invalid_argument("Unexpected end of file.");
+        void open(std::istream &in) {
+            // Parse meta info
+            std::string line;
+            std::getline(in, line);
             line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
-            split(line, ',', split_line);
-            if (split_line.size() != 3) throw std::invalid_argument ("Expected 3 values in line: " + line);
-            points.emplace_back(std::stod(split_line[0]), std::stod(split_line[1]), std::stod(split_line[2]));
+            auto line_split = split(line, ',');
+
+            size_t nd, na, nc;
+            try {
+                nd = std::stoul(line_split[0]);
+                na = std::stoul(line_split[1]);
+                nc = std::stoul(line_split[2]);
+                this->_name = line_split[3];
+            } catch (std::exception &e) {
+                std::cerr << "Error parsing meta info line, expected 4 fields. \n" << line << std::endl;
+                throw;
+            }
+
+            this->_clouds.resize(3);
+            for (auto &c : this->_clouds) c.resize(1);
+            this->_parse_coordinates(in, nd, this->_clouds[0][0]);
+            this->_parse_coordinates(in, na, this->_clouds[1][0]);
+            this->_parse_coordinates(in, nc, this->_clouds[2][0]);
         }
-        target.add_points(points);
-    }
 
-};
+        const PointCloud <T> &opt_marker_embase() const {
+            return this->_clouds[0][0];
+        }
 
-// Convenience aliases
-using CalibrationBody = CalibrationFile<double>;
-using CalibrationReadings = CalibrationFile<double>;
+        const PointCloud <T> &opt_marker_calobj() const {
+            return this->_clouds[1][0];
+        }
 
+        const PointCloud <T> &em_marker_calobj() const {
+            return this->_clouds[2][0];
+        }
 
-TEST_CASE ("Cal Body file") {
+    };
+
+    template<typename T>
+    class CalReadings : public File<T> {
+    public:
+        using File<T>::open;
+
+        CalReadings() {}
+
+        CalReadings(std::string file) {
+            open(file);
+        }
+
+        void open(std::istream &in) {
+            // Parse meta info
+            std::string line;
+            std::getline(in, line);
+            line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+            auto line_split = split(line, ',');
+
+            size_t nd, na, nc, nf;
+            try {
+                nd = std::stoul(line_split[0]);
+                na = std::stoul(line_split[1]);
+                nc = std::stoul(line_split[2]);
+                nf = std::stoul(line_split[3]);
+                this->_name = line_split[4];
+            } catch (std::exception &e) {
+                std::cerr << "Error parsing meta info line, expected 5 fields. \n" << line << std::endl;
+                throw;
+            }
+
+            this->_clouds.resize(3);
+            for (auto &c : this->_clouds) c.resize(nf);
+            for (size_t frame = 0; frame < nf; ++frame) {
+                this->_parse_coordinates(in, nd, this->_clouds[0][frame]);
+                this->_parse_coordinates(in, na, this->_clouds[1][frame]);
+                this->_parse_coordinates(in, nc, this->_clouds[2][frame]);
+            }
+        }
+
+        const std::vector<PointCloud < T>> &
+
+        opt_marker_embase() const {
+            return this->_clouds[0];
+        }
+
+        const std::vector<PointCloud < T>> &
+
+        opt_marker_calobj() const {
+            return this->_clouds[1];
+        }
+
+        const std::vector<PointCloud < T>> &
+
+        em_marker_calobj() const {
+            return this->_clouds[2];
+        }
+    };
+
+    template<typename T>
+    class EMPivot : public File<T> {
+    public:
+        using File<T>::open;
+
+        EMPivot() {}
+
+        EMPivot(std::string file) {
+            open(file);
+        }
+
+        void open(std::istream &in) {
+            // Parse meta info
+            std::string line;
+            std::getline(in, line);
+            line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+            auto line_split = split(line, ',');
+
+            size_t ng, nf;
+            try {
+                ng = std::stoul(line_split[0]);
+                nf = std::stoul(line_split[1]);
+                this->_name = line_split[2];
+            } catch (std::exception &e) {
+                std::cerr << "Error parsing meta info line, expected 3 fields. \n" << line << std::endl;
+                throw;
+            }
+
+            this->_clouds.resize(1);
+            for (auto &c : this->_clouds) c.resize(nf);
+            for (size_t frame = 0; frame < nf; ++frame) {
+                this->_parse_coordinates(in, ng, this->_clouds[0][frame]);
+            }
+        }
+
+        const std::vector<PointCloud < T>> &
+
+        em_marker_probe() const {
+            return this->_clouds[0];
+        }
+    };
+
+    template<typename T>
+    class OptPivot : public File<T> {
+        using File<T>::open;
+    public:
+        OptPivot() {}
+
+        OptPivot(std::string file) {
+            open(file);
+        }
+
+        void open(std::istream &in) {
+            // Parse meta info
+            std::string line;
+            std::getline(in, line);
+            line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+            auto line_split = split(line, ',');
+
+            size_t nd, nh, nf;
+            try {
+                nd = std::stoul(line_split[0]);
+                nh = std::stoul(line_split[1]);
+                nf = std::stoul(line_split[2]);
+                this->_name = line_split[3];
+            } catch (std::exception &e) {
+                std::cerr << "Error parsing meta info line, expected 4 fields. \n" << line << std::endl;
+                throw;
+            }
+
+            this->_clouds.resize(2);
+            for (auto &c : this->_clouds) c.resize(nf);
+            for (size_t frame = 0; frame < nf; ++frame) {
+                this->_parse_coordinates(in, nd, this->_clouds[0][frame]);
+                this->_parse_coordinates(in, nh, this->_clouds[1][frame]);
+            }
+        }
+
+        const std::vector<PointCloud < T>> &
+
+        opt_marker_embase() const {
+            return this->_clouds[0];
+        }
+
+        const std::vector<PointCloud < T>> &
+
+        opt_marker_probe() const {
+            return this->_clouds[1];
+        }
+    };
+}
+
+TEST_CASE ("Calibration Body file") {
+    using namespace cis;
     const std::string tmp_file("_cis_tmp_file");
     std::ofstream t(tmp_file);
     t << "1,2,\t3, NAME\n1,1 ,1\n2,2,2\n3,3,3\n4,4,4\n5,5,5\n6,6,6";
     t.close();
 
-    CalibrationFile<> cb(tmp_file);
-
-            CHECK(cb.frame().opt_marker_embase.size() == 1);
-            CHECK(cb.frame().opt_marker_calobj.size() == 2);
-            CHECK(cb.frame().em_marker_calobj.size() == 3);
+    cis::CalBody<double> cb{tmp_file};
+            CHECK(cb.opt_marker_embase().size() == 1);
+            CHECK(cb.opt_marker_calobj().size() == 2);
+            CHECK(cb.em_marker_calobj().size() == 3);
             CHECK(cb.name() == "NAME");
 
-    auto d = cb.frame().opt_marker_embase;
-    auto a = cb.frame().opt_marker_calobj;
-    auto c = cb.frame().em_marker_calobj;
+    const auto &d = cb.opt_marker_embase();
+    const auto &a = cb.opt_marker_calobj();
+    const auto &c = cb.em_marker_calobj();
 
     PointCloud<double>::Point p;
 
@@ -186,20 +320,21 @@ TEST_CASE ("Cal Body file") {
     remove(tmp_file.c_str());
 }
 
-TEST_CASE ("Cal Readings file") {
+TEST_CASE ("Calibration Readings file") {
+    using namespace cis;
     const std::string tmp_file("_cis_tmp_file");
     std::ofstream t(tmp_file);
     t << "1,2,\t3,2, NAME\n1,1 ,1\n2,2,2\n3,3,3\n4,4,4\n5,5,5\n6,6,6\n1,1 ,1\n2,2,2\n3,3,3\n4,4,4\n5,5,5\n6,6,6";
     t.close();
 
-    CalibrationFile<> cb(tmp_file);
+    CalReadings<double> cb(tmp_file);
             CHECK(cb.size() == 2);
 
             CHECK(cb.name() == "NAME");
 
-    auto d = cb.frame(0).opt_marker_embase;
-    auto a = cb.frame(0).opt_marker_calobj;
-    auto c = cb.frame(0).em_marker_calobj;
+    auto d = cb.opt_marker_embase().at(0);
+    auto a = cb.opt_marker_calobj().at(0);
+    auto c = cb.em_marker_calobj().at(0);
 
     PointCloud<double>::Point p;
 
@@ -224,9 +359,12 @@ TEST_CASE ("Cal Readings file") {
             CHECK(c.at(2) == p);
             CHECK_THROWS(c.at(3));
 
-    d = cb.frame(1).opt_marker_embase;
-    a = cb.frame(1).opt_marker_calobj;
-    c = cb.frame(1).em_marker_calobj;
+    d = cb.opt_marker_embase().at(1);
+    a = cb.opt_marker_calobj().at(1);
+    c = cb.em_marker_calobj().at(1);
+            CHECK_THROWS(cb.opt_marker_embase().at(2));
+            CHECK_THROWS(cb.opt_marker_calobj().at(2));
+            CHECK_THROWS(cb.em_marker_calobj().at(2));
 
             CHECK(d.size() == 1);
     p = {1, 1, 1};
@@ -253,4 +391,87 @@ TEST_CASE ("Cal Readings file") {
     remove(tmp_file.c_str());
 }
 
+TEST_CASE ("EM Pivot File") {
+    using namespace cis;
+    const std::string tmp_file("_cis_tmp_file");
+    std::ofstream t(tmp_file);
+    t << "2,\t2, NAME\n1,1 ,1\n2,2,2\n3,3,3\n4,4,4\n";
+    t.close();
+
+    EMPivot<double> emp(tmp_file);
+            CHECK(emp.name() == "NAME");
+
+            REQUIRE(emp.em_marker_probe().size() == 2);
+    auto ng = emp.em_marker_probe()[0];
+    PointCloud<double>::Point p;
+            CHECK(ng.size() == 2);
+    p = {1, 1, 1};
+            CHECK(ng.at(0) == p);
+    p = {2, 2, 2};
+            CHECK(ng.at(1) == p);
+            CHECK_THROWS(ng.at(2));
+
+    ng = emp.em_marker_probe()[1];
+            CHECK(ng.size() == 2);
+    p = {3, 3, 3};
+            CHECK(ng.at(0) == p);
+    p = {4, 4, 4};
+            CHECK(ng.at(1) == p);
+            CHECK_THROWS(ng.at(2));
+
+    remove(tmp_file.c_str());
+}
+
+TEST_CASE ("Optical Pivot File") {
+    using namespace cis;
+    const std::string tmp_file("_cis_tmp_file");
+    std::ofstream t(tmp_file);
+    t << "2, 1,\t2, NAME\n1,1 ,1\n2,2,2\n3,3,3\n4,4,4\n1,1 ,1\n2,2,2\n";
+    t.close();
+
+    OptPivot<double> op(tmp_file);
+            CHECK(op.name() == "NAME");
+
+            REQUIRE(op.opt_marker_embase().size() == 2);
+            REQUIRE(op.opt_marker_probe().size() == 2);
+
+            REQUIRE(op.opt_marker_embase()[0].size() == 2);
+            REQUIRE(op.opt_marker_probe()[0].size() == 1);
+
+    PointCloud<double>::Point p;
+
+    auto ng = op.opt_marker_embase()[0];
+
+            CHECK(ng.size() == 2);
+    p = {1, 1, 1};
+            CHECK(ng.at(0) == p);
+    p = {2, 2, 2};
+            CHECK(ng.at(1) == p);
+            CHECK_THROWS(ng.at(2));
+
+    ng = op.opt_marker_embase()[1];
+
+            CHECK(ng.size() == 2);
+    p = {4, 4, 4};
+            CHECK(ng.at(0) == p);
+    p = {1, 1, 1};
+            CHECK(ng.at(1) == p);
+            CHECK_THROWS(ng.at(2));
+
+    ng = op.opt_marker_probe()[0];
+
+            CHECK(ng.size() == 1);
+    p = {3, 3, 3};
+            CHECK(ng.at(0) == p);
+            CHECK_THROWS(ng.at(1));
+
+    ng = op.opt_marker_probe()[1];
+
+            CHECK(ng.size() == 1);
+    p = {2, 2, 2};
+            CHECK(ng.at(0) == p);
+            CHECK_THROWS(ng.at(1));
+
+    remove(tmp_file.c_str());
+}
 #endif //CIS_CAL_FILES_H

@@ -19,9 +19,9 @@ template<typename T>
 void distortion_calibration(const CalibrationFile<T> &body, const CalibrationFile<T> &readings) {
 
     //Point clouds from body object
-    const PointCloud<T> &d = body.frame().opt_marker_embase;
-    const PointCloud<T> &a = body.frame().opt_marker_calobj;
-    const PointCloud<T> &c = body.frame().em_marker_calobj;
+    const PointCloud <T> &d = body.opt_marker_embase();
+    const PointCloud <T> &a = body.opt_marker_calobj();
+    const PointCloud <T> &c = body.em_marker_calobj();
 
 
 
@@ -29,10 +29,10 @@ void distortion_calibration(const CalibrationFile<T> &body, const CalibrationFil
     Eigen::Transform<T, 3, Eigen::Affine> F_A, F_D;
     for(int i = 0; i < readings.size(); i++) {
         //Estimate F_A
-        const PointCloud<T> &A = readings.frame(i).opt_marker_calobj;
+        const PointCloud <T> &A = readings.opt_marker_calobj(i);
         F_A = cloud_to_cloud(a, A);
         //Estimate F_D
-        const PointCloud<T> &D = readings.frame(i).opt_marker_embase;
+        const PointCloud <T> &D = readings.opt_marker_embase(i);
         F_D = cloud_to_cloud(d, D);
         //Compute Theoretical C_i
         std::cout << F_A.rotation() << std::endl;
