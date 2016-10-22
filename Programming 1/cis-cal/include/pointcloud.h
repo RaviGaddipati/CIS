@@ -94,13 +94,14 @@ namespace cis {
             return cent /= _cloud_matrix.rows();
         }
 
+
         /**
          * @brief
          * Add the given point to all points.
          * @param p Point to add
          * @return *this
          */
-        PointCloud<T> operator+=(Point p) {
+        PointCloud<T> &operator+=(Point p) {
             _cloud_matrix.col(0) += p(0);
             _cloud_matrix.col(1) += p(1);
             _cloud_matrix.col(2) += p(2);
@@ -113,11 +114,51 @@ namespace cis {
          * @param p Point to subtract
          * @return *this
          */
-        PointCloud<T> operator-=(Point p) {
+        PointCloud<T> &operator-=(Point p) {
             _cloud_matrix.col(0) -= p(0);
             _cloud_matrix.col(1) -= p(1);
             _cloud_matrix.col(2) -= p(2);
             return *this;
+        }
+
+        /**
+         * @brief
+         * Add the given point to all points.
+         * @param p Point to add
+         * @return *this
+         */
+        PointCloud<T> operator+(const Point &p) const {
+            PointCloud<T> ret(*this);
+            ret._cloud_matrix.col(0) += p(0);
+            ret._cloud_matrix.col(1) += p(1);
+            ret._cloud_matrix.col(2) += p(2);
+            return ret;
+        }
+
+        /**
+         * @brief
+         * Subtract the given point from all points.
+         * @param p Point to subtract
+         * @return *this
+         */
+        PointCloud<T> operator-(const Point &p) const {
+            PointCloud<T> ret(*this);
+            ret._cloud_matrix.col(0) -= p(0);
+            ret._cloud_matrix.col(1) -= p(1);
+            ret._cloud_matrix.col(2) -= p(2);
+            return ret;
+        }
+
+        /**
+         * @brief
+         * Apply a transformaion to each point
+         */
+        PointCloud<T> transform(const Eigen::Transform<double, 3, Eigen::Affine> &trans) const {
+            PointCloud<T> ret(*this);
+            for (size_t i = 0; i < ret._cloud_matrix.cols(); ++i) {
+                ret._cloud_matrix.row(i) = trans.linear() * ret.at(i);
+            }
+            return ret;
         }
 
         /**
@@ -138,7 +179,7 @@ namespace cis {
          * *this -= this->centroid()
          * @return *this
          */
-        PointCloud<T> center_self() {
+        PointCloud<T> &center_self() {
             *this -= centroid();
             return *this;
         }
