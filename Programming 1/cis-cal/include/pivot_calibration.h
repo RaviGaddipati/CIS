@@ -57,8 +57,7 @@ TEST_CASE ("Pivot Calibration") {
     const int num_frames = 10;
     const int num_points = 10;
 
-    // Vector from probe frame to probe tip
-    const Eigen::Matrix<double, 3, 1> t = Eigen::Matrix<double, 3, 1>::Random();
+    // Vector to the post in space
     const Eigen::Matrix<double, 3, 1> post = {1, 2, 1};//Eigen::Matrix<double, 3, 1>::Random();
 
     // Random set of points, centered on origin.
@@ -66,21 +65,23 @@ TEST_CASE ("Pivot Calibration") {
                                            {2, 3, 4},
                                            {3, 2, 1}}};
 
-    std::cout << probe_cloud.centroid() << std::endl;
+    //The "tip" is the vector from the centroid of the point cloud to the post
+    std::cout << "Centroid: " << probe_cloud.centroid() << std::endl;
+    t =  post - probe_cloud.centroid();
 
 //    for (int j = 0; j < num_points; ++j) {
 //        probe_cloud.add_point(Eigen::Matrix<double,3,1>::Random());
 //    }
 
-    //probe_cloud.center_self();
+    //probe_cloud.center_self(); //Don't center the point cloud, we want our point cloud to live out in the 3D world
 
     std::vector<PointCloud<double>> frames;
 
     // Create frames by rotating around the post
     for (size_t i = 0; i < num_frames; ++i) {
-        // Rotates the points, then moves to the post
         Eigen::Transform<double, 3, Eigen::Affine> trans(
-                //From the website I posted on facebook
+                //From the website I posted on facebook, can model rotation around point in space this way
+                //http://www.euclideanspace.com/maths/geometry/affine/aroundPoint/
                 Eigen::Translation<double, 3>(post) *
                 Eigen::AngleAxis<double>(i * .3, Eigen::Vector3d::UnitZ()) *
                 Eigen::AngleAxis<double>(i * .2, Eigen::Vector3d::UnitY()) *
