@@ -38,10 +38,12 @@ namespace cis {
 
         // Compute the transformation and build A, b matricies
         for (size_t i = 0; i < frames.size(); ++i) {
-            const auto trans = cloud_to_cloud(frames.at(i), reference_frame);
+            //Need to do the reverse: Take the original reference frame (which is constant throughout all iterations) to the new points
+            //const auto trans = cloud_to_cloud(frames.at(i), reference_frame);
+            const auto trans = cloud_to_cloud(reference_frame, frames.at(i));
             A.block(3 * i, 0, 3, 3) = trans.rotation();
             A.block(3 * i, 3, 3, 3) = neg_ident;
-            b.block(3 * i, 0, 3, 1) = trans.translation();
+            b.block(3 * i, 0, 3, 1) = -trans.translation(); //Needs to be the negative translation
         }
 
         // Solve the system
@@ -57,16 +59,20 @@ TEST_CASE ("Pivot Calibration") {
 
     // Vector from probe frame to probe tip
     const Eigen::Matrix<double, 3, 1> t = Eigen::Matrix<double, 3, 1>::Random();
-    const Eigen::Matrix<double, 3, 1> post = {0, 0, 0};//Eigen::Matrix<double, 3, 1>::Random();
+    const Eigen::Matrix<double, 3, 1> post = {1, 2, 1};//Eigen::Matrix<double, 3, 1>::Random();
 
     // Random set of points, centered on origin.
     PointCloud<double> probe_cloud{{{0, 1, 2},
                                            {2, 3, 4},
                                            {3, 2, 1}}};
+
+    std::cout << probe_cloud.centroid() << std::endl;
+
 //    for (int j = 0; j < num_points; ++j) {
 //        probe_cloud.add_point(Eigen::Matrix<double,3,1>::Random());
 //    }
-    probe_cloud.center_self();
+
+    //probe_cloud.center_self();
 
     std::vector<PointCloud<double>> frames;
 
@@ -74,11 +80,16 @@ TEST_CASE ("Pivot Calibration") {
     for (size_t i = 0; i < num_frames; ++i) {
         // Rotates the points, then moves to the post
         Eigen::Transform<double, 3, Eigen::Affine> trans(
-                Eigen::Translation<double, 3>(post - t) *
+                //From the website I posted on facebook
+                Eigen::Translation<double, 3>(post) *
                 Eigen::AngleAxis<double>(i * .3, Eigen::Vector3d::UnitZ()) *
                 Eigen::AngleAxis<double>(i * .2, Eigen::Vector3d::UnitY()) *
-                Eigen::AngleAxis<double>(i * .1, Eigen::Vector3d::UnitX())
+                Eigen::AngleAxis<double>(i * .1, Eigen::Vector3d::UnitX()) *
+                Eigen::Translation<double, 3>(-post)
         );
+
+        //std::cout << trans.matrix() << "\n--\n" << std::endl;
+
         frames.push_back(probe_cloud.transform(trans));
     }
 
