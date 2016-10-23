@@ -151,12 +151,12 @@ namespace cis {
 
         /**
          * @brief
-         * Apply a transformaion to each point
+         * Apply a transformaion to each point (as a vector)
          */
         PointCloud<T> transform(const Eigen::Transform<double, 3, Eigen::Affine> &trans) const {
             PointCloud<T> ret(*this);
             for (size_t i = 0; i < ret._cloud_matrix.cols(); ++i) {
-                ret._cloud_matrix.row(i) = trans.linear() * ret.at(i);
+                ret._cloud_matrix.row(i) = trans * ret.at(i);
             }
             return ret;
         }
