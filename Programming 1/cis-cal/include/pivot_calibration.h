@@ -31,7 +31,6 @@ namespace cis {
     template<typename T>
     Eigen::Matrix<T, 6, 1>
     pivot_calibration(const std::vector<PointCloud<T>> &frames) {
-        if (frames.size() < 2) throw std::invalid_argument("At least 2 frames required for a complete solution.");
         // The first frame is moved to the tracker origin
         const auto reference_frame = frames.at(0).center();
 
@@ -44,12 +43,10 @@ namespace cis {
 
         // Compute the transformation and build A, b matricies
         for (size_t i = 0; i < frames.size(); ++i) {
-            auto trans = cloud_to_cloud(reference_frame, frames.at(i));
-            std::cout << trans * reference_frame.at(0) << "; " << frames.at(i).at(0) << "\n-------\n" << std::endl;
-            //std::cout << trans.matrix() << "\n-------\n" << std::endl;
-            A.block(3 * i, 0, 3, 3) = trans.rotation();
+            const auto trans = reference_frame.transformation_to(frames.at(i));
+            A.block(3 * i, 0, 3, 3) = trans.rotation().matrix();
             A.block(3 * i, 3, 3, 3) = neg_ident;
-            b.block(3 * i, 0, 3, 1) = -trans.translation(); //Needs to be the negative translation
+            b.block(3 * i, 0, 3, 1) = -trans.translation().matrix(); //Needs to be the negative translation
         }
 
         // Solve the system
@@ -73,7 +70,6 @@ TEST_CASE ("Pivot Calibration") {
 
     //The "tip" is the vector from the centroid of the point cloud to the post
     const auto t = post - probe_cloud.centroid();
-
 
     std::vector<PointCloud<double>> frames;
 
