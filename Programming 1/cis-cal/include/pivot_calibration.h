@@ -17,7 +17,7 @@ namespace cis {
  * The system Ax=b is formed and solved for x, for frames 0..N
  * A = {{R_0,-I},...,{R_N,-I}}
  * x = {{t},{post}}^T
- * b = {{p_0},...,{p_n}}^T
+ * b = {{-p_0},...,{-p_n}}^T
  * where {R_i,p_i} = the trasnformation of the frame from the origin to the frame.
  * @param readings
  * @return x vector: {t, post}
@@ -38,8 +38,6 @@ namespace cis {
 
         // Compute the transformation and build A, b matricies
         for (size_t i = 0; i < frames.size(); ++i) {
-            //Need to do the reverse: Take the original reference frame (which is constant throughout all iterations) to the new points
-            //const auto trans = cloud_to_cloud(frames.at(i), reference_frame);
             const auto trans = cloud_to_cloud(reference_frame, frames.at(i));
             A.block(3 * i, 0, 3, 3) = trans.rotation();
             A.block(3 * i, 3, 3, 3) = neg_ident;
@@ -58,7 +56,7 @@ TEST_CASE ("Pivot Calibration") {
     const int num_points = 10;
 
     // Vector to the post in space
-    const Eigen::Matrix<double, 3, 1> post = {1, 2, 1};//Eigen::Matrix<double, 3, 1>::Random();
+    const Eigen::Matrix<double, 3, 1> post = {1, 1, 1};//Eigen::Matrix<double, 3, 1>::Random();
 
     // Random set of points, centered on origin.
     PointCloud<double> probe_cloud{{{0, 1, 2},
@@ -66,34 +64,24 @@ TEST_CASE ("Pivot Calibration") {
                                            {3, 2, 1}}};
 
     //The "tip" is the vector from the centroid of the point cloud to the post
-    std::cout << "Centroid: " << probe_cloud.centroid() << std::endl;
-    t =  post - probe_cloud.centroid();
+    const auto t = post - probe_cloud.centroid();
 
-//    for (int j = 0; j < num_points; ++j) {
-//        probe_cloud.add_point(Eigen::Matrix<double,3,1>::Random());
-//    }
-
-    //probe_cloud.center_self(); //Don't center the point cloud, we want our point cloud to live out in the 3D world
 
     std::vector<PointCloud<double>> frames;
+
+    probe_cloud.center_self();
 
     // Create frames by rotating around the post
     for (size_t i = 0; i < num_frames; ++i) {
         Eigen::Transform<double, 3, Eigen::Affine> trans(
-                //From the website I posted on facebook, can model rotation around point in space this way
-                //http://www.euclideanspace.com/maths/geometry/affine/aroundPoint/
-                Eigen::Translation<double, 3>(post) *
+                // Move to origin, rotate, move back to post
+                Eigen::Translation<double, 3>(post - t) *
                 Eigen::AngleAxis<double>(i * .3, Eigen::Vector3d::UnitZ()) *
                 Eigen::AngleAxis<double>(i * .2, Eigen::Vector3d::UnitY()) *
-                Eigen::AngleAxis<double>(i * .1, Eigen::Vector3d::UnitX()) *
-                Eigen::Translation<double, 3>(-post)
+                Eigen::AngleAxis<double>(i * .1, Eigen::Vector3d::UnitX())
         );
-
-        //std::cout << trans.matrix() << "\n--\n" << std::endl;
-
         frames.push_back(probe_cloud.transform(trans));
     }
-
 
     auto pred_t = pivot_calibration(frames);
     std::cout << "\nActual:\n" << t << '\n' << post << "\n\nPredicted:\n" << pred_t << std::endl;

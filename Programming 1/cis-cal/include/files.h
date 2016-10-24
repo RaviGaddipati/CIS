@@ -23,6 +23,10 @@
 
 namespace cis {
 
+    /**
+     * @brief
+     * Abstract class that provides base data structure and coord parser.
+     */
     template<typename T>
     class File {
     public:
@@ -76,6 +80,10 @@ namespace cis {
 
     };
 
+    /**
+     * @brief
+     * Represents a Calibration body.
+     */
     template<typename T>
     class CalBody : public File<T> {
     public:
@@ -83,10 +91,16 @@ namespace cis {
 
         CalBody() {}
 
+        /**
+         * @param file Open the given file
+         */
         CalBody(std::string file) {
             this->open(file);
         }
 
+        /**
+         * @param in Parse data from the stream
+         */
         void open(std::istream &in) {
             // Parse meta info
             std::string line;
@@ -112,20 +126,33 @@ namespace cis {
             this->_parse_coordinates(in, nc, this->_clouds[2][0]);
         }
 
+        /**
+         * @return Optical markers on the EM base
+         */
         const PointCloud <T> &opt_marker_embase() const {
             return this->_clouds[0][0];
         }
 
+        /**
+         * @return Optical markers on the calibration object
+         */
         const PointCloud <T> &opt_marker_calobj() const {
             return this->_clouds[1][0];
         }
 
+        /**
+         * @return EM markers on the calibration object
+         */
         const PointCloud <T> &em_marker_calobj() const {
             return this->_clouds[2][0];
         }
 
     };
 
+    /**
+     * @brief
+     * Represents point clouds through multiple frames
+     */
     template<typename T>
     class CalReadings : public File<T> {
     public:
@@ -133,10 +160,16 @@ namespace cis {
 
         CalReadings() {}
 
+        /**
+         * @param file Open the given file.
+         */
         CalReadings(std::string file) {
             open(file);
         }
 
+        /**
+         * @param in Parse the data stream
+         */
         void open(std::istream &in) {
             // Parse meta info
             std::string line;
@@ -165,18 +198,27 @@ namespace cis {
             }
         }
 
+        /**
+         * @return  Frames of Optical markers on the EM base
+         */
         const std::vector<PointCloud < T>> &
 
         opt_marker_embase() const {
             return this->_clouds[0];
         }
 
+        /**
+         * @return  Frames of Optical markers on the Calibration Object
+         */
         const std::vector<PointCloud < T>> &
 
         opt_marker_calobj() const {
             return this->_clouds[1];
         }
 
+        /**
+         * @return  Frames of EM markers on the calibration object
+         */
         const std::vector<PointCloud < T>> &
 
         em_marker_calobj() const {
@@ -184,6 +226,10 @@ namespace cis {
         }
     };
 
+    /**
+     * @brief
+     * Represents data frames from a pivot calibration procedure, EM markers.
+     */
     template<typename T>
     class EMPivot : public File<T> {
     public:
@@ -191,10 +237,16 @@ namespace cis {
 
         EMPivot() {}
 
+        /**
+         * @param file Open the given file
+         */
         EMPivot(std::string file) {
             open(file);
         }
 
+        /**
+         * @param in Parse the input stream
+         */
         void open(std::istream &in) {
             // Parse meta info
             std::string line;
@@ -219,6 +271,9 @@ namespace cis {
             }
         }
 
+        /**
+         * @return Frames of EM markers on the probe.
+         */
         const std::vector<PointCloud < T>> &
 
         em_marker_probe() const {
@@ -226,16 +281,26 @@ namespace cis {
         }
     };
 
+    /**
+     * @brief
+     * Represents data frames from a pivot calibration procedure, Optical markers.
+     */
     template<typename T>
     class OptPivot : public File<T> {
         using File<T>::open;
     public:
         OptPivot() {}
 
+        /**
+         * @param file Open the givne file
+         */
         OptPivot(std::string file) {
             open(file);
         }
 
+        /**
+         * @param in Parse the input stream.
+         */
         void open(std::istream &in) {
             // Parse meta info
             std::string line;
@@ -262,19 +327,108 @@ namespace cis {
             }
         }
 
+        /**
+         * @return vector of frames of optical markers on the EM base.
+         */
         const std::vector<PointCloud < T>> &
 
         opt_marker_embase() const {
             return this->_clouds[0];
         }
 
+        /**
+         * @return vector of frames of optical markers on the probe.
+         */
         const std::vector<PointCloud < T>> &
 
         opt_marker_probe() const {
             return this->_clouds[1];
         }
     };
+
+    /**
+     * @param file_name Write the data to this file
+     * @param data Vector of frames of PointClouds to write
+     * @param em_post position of the post found by EM Pivot
+     * @param opt_post position of the post found by Optical pivot
+     */
+    template<typename T>
+    void output_writer(const std::string file_name,
+                       const std::vector<PointCloud < T>>
+
+    &data,
+    const Eigen::Matrix<T, 3, 1> &em_post,
+    const Eigen::Matrix<T, 3, 1> &opt_post
+    ) {
+    std::ofstream out(file_name);
+    if (!out.
+
+    good()
+
+    ) throw std::invalid_argument("Invalid output file: " + file_name);
+    output_writer(out, file_name, data, em_post, opt_post
+    );
 }
+
+/**
+ * @param out Output stream to write to
+ * @param file_name label of output file
+ * @param data Vector of frames of PointClouds to write
+ * @param em_post position of the post found by EM Pivot
+ * @param opt_post position of the post found by Optical pivot
+ */
+template<typename T>
+void output_writer(std::ostream &out,
+                   const std::string file_name,
+                   const std::vector<PointCloud < T>>
+
+&data,
+const Eigen::Matrix<T, 3, 1> &em_post,
+const Eigen::Matrix<T, 3, 1> &opt_post
+) {
+if (data.
+
+size()
+
+< 1) throw std::invalid_argument("Invalid data vector.");
+
+out << data.at(0).
+
+size()
+
+<< ',' << data.
+
+size()
+
+<< ',' << file_name << '\n'
+<< em_post(0) << ',' << em_post(1) << ',' << em_post(2) << '\n'
+<< opt_post(0) << ',' << opt_post(1) << ',' << opt_post(2) << '\n';
+
+for (
+const auto &frame :
+data) {
+for (
+size_t i = 0;
+i<frame.
+
+size();
+
+++i) {
+out << frame.
+at(i)(0)
+<< ',' << frame.
+at(i)(1)
+<< ',' << frame.
+at(i)(2)
+<< '\n';
+}
+}
+out <<
+std::flush;
+}
+}
+
+/*************** TEST CASES ***************/
 
 TEST_CASE ("Calibration Body file") {
     using namespace cis;
@@ -474,4 +628,18 @@ TEST_CASE ("Optical Pivot File") {
 
     remove(tmp_file.c_str());
 }
+
+TEST_CASE ("Output Writer") {
+    std::stringstream dest;
+    cis::PointCloud<double> pc;
+    pc.add_point({0, 0, 0});
+    pc.add_point({1, 1, 1});
+    pc.add_point({2, 2, 2});
+    std::vector<cis::PointCloud<double>> frames = {pc, pc};
+    Eigen::Matrix<double, 3, 1> pt = {1, 2, 3};
+    cis::output_writer(dest, "out.txt", frames, pt, pt);
+
+            CHECK((dest.str()) == "3,2,out.txt\n1,2,3\n1,2,3\n0,0,0\n1,1,1\n2,2,2\n0,0,0\n1,1,1\n2,2,2\n");
+}
+
 #endif //CIS_CAL_FILES_H

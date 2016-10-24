@@ -223,6 +223,7 @@ std::ostream &operator<<(std::ostream &os, const cis::PointCloud<T> &pc) {
     return os;
 }
 
+
 TEST_CASE ("Point Cloud") {
     using namespace cis;
     std::vector<PointCloud<double>::Point> points = {{1,1,2}, {2,4,1}, {3,6,3}, {2,1,6}};

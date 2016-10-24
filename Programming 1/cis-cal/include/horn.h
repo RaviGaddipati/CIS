@@ -80,7 +80,7 @@ namespace cis {
 
 TEST_CASE ("Horn cloud-to-cloud") {
 using namespace cis;
-    // Group of points translated to (1,1,1)
+    const int num_points = 10;
     PointCloud<double> pc1{{{1, 2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}, {3, 8, 7}}};
     {
         Eigen::Translation<double, 3> trans(1, 1, 1);
@@ -102,14 +102,8 @@ using namespace cis;
         pc2.add_point(trans * pc1.at(i));
     }
 
-    // Calculate transformation
-    auto pc1_cpy = pc1;
-    auto pc2_cpy = pc2;
-    auto estimated = cloud_to_cloud(pc1, pc2);
-    // Make sure original clouds is restored
-            CHECK(pc1_cpy.point_store().matrix().isApprox(pc1.point_store().matrix()));
-            CHECK(pc2_cpy.point_store().matrix().isApprox(pc2.point_store().matrix()));
 
+    auto estimated = cloud_to_cloud(pc1, pc2);
     // isApprox because floating point
             CHECK(estimated.rotation().isApprox(trans.rotation()));
             CHECK(estimated.translation().isApprox(trans.translation()));
