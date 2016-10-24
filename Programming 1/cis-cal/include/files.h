@@ -201,27 +201,21 @@ namespace cis {
         /**
          * @return  Frames of Optical markers on the EM base
          */
-        const std::vector<PointCloud < T>> &
-
-        opt_marker_embase() const {
+        const std::vector<PointCloud<T>> &opt_marker_embase() const {
             return this->_clouds[0];
         }
 
         /**
          * @return  Frames of Optical markers on the Calibration Object
          */
-        const std::vector<PointCloud < T>> &
-
-        opt_marker_calobj() const {
+        const std::vector<PointCloud<T>> &opt_marker_calobj() const {
             return this->_clouds[1];
         }
 
         /**
          * @return  Frames of EM markers on the calibration object
          */
-        const std::vector<PointCloud < T>> &
-
-        em_marker_calobj() const {
+        const std::vector<PointCloud<T>> &em_marker_calobj() const {
             return this->_clouds[2];
         }
     };
@@ -274,9 +268,7 @@ namespace cis {
         /**
          * @return Frames of EM markers on the probe.
          */
-        const std::vector<PointCloud < T>> &
-
-        em_marker_probe() const {
+        const std::vector<PointCloud<T>> &em_marker_probe() const {
             return this->_clouds[0];
         }
     };
@@ -330,18 +322,14 @@ namespace cis {
         /**
          * @return vector of frames of optical markers on the EM base.
          */
-        const std::vector<PointCloud < T>> &
-
-        opt_marker_embase() const {
+        const std::vector<PointCloud<T>> &opt_marker_embase() const {
             return this->_clouds[0];
         }
 
         /**
          * @return vector of frames of optical markers on the probe.
          */
-        const std::vector<PointCloud < T>> &
-
-        opt_marker_probe() const {
+        const std::vector<PointCloud<T>> &opt_marker_probe() const {
             return this->_clouds[1];
         }
     };
@@ -352,80 +340,42 @@ namespace cis {
      * @param em_post position of the post found by EM Pivot
      * @param opt_post position of the post found by Optical pivot
      */
-    template<typename T>
+    template <typename T>
     void output_writer(const std::string file_name,
-                       const std::vector<PointCloud < T>>
+                       const std::vector<PointCloud<T>> &data,
+                       const Eigen::Matrix<T, 3, 1> &em_post,
+                       const Eigen::Matrix<T, 3, 1> &opt_post) {
+                            std::ofstream out(file_name);
+                            if (!out.good()) throw std::invalid_argument("Invalid output file: " + file_name);
+                            output_writer(out, file_name, data, em_post, opt_post);
+                       }
 
-    &data,
-    const Eigen::Matrix<T, 3, 1> &em_post,
-    const Eigen::Matrix<T, 3, 1> &opt_post
-    ) {
-    std::ofstream out(file_name);
-    if (!out.
+    /**
+     * @param out Output stream to write to
+     * @param file_name label of output file
+     * @param data Vector of frames of PointClouds to write
+     * @param em_post position of the post found by EM Pivot
+     * @param opt_post position of the post found by Optical pivot
+     */
+    template <typename T>
+    void output_writer(std::ostream &out,
+                       const std::string file_name,
+                       const std::vector<PointCloud<T>> &data,
+                       const Eigen::Matrix<T, 3, 1> &em_post,
+                       const Eigen::Matrix<T, 3, 1> &opt_post) {
+        if (data.size() < 1) throw std::invalid_argument("Invalid data vector.");
 
-    good()
+        out << data.at(0).size() << ',' << data.size() << ',' << file_name << '\n'
+        << em_post(0) << ',' << em_post(1) << ',' << em_post(2) << '\n'
+        << opt_post(0) << ',' << opt_post(1) << ',' << opt_post(2) << '\n';
 
-    ) throw std::invalid_argument("Invalid output file: " + file_name);
-    output_writer(out, file_name, data, em_post, opt_post
-    );
-}
-
-/**
- * @param out Output stream to write to
- * @param file_name label of output file
- * @param data Vector of frames of PointClouds to write
- * @param em_post position of the post found by EM Pivot
- * @param opt_post position of the post found by Optical pivot
- */
-template<typename T>
-void output_writer(std::ostream &out,
-                   const std::string file_name,
-                   const std::vector<PointCloud < T>>
-
-&data,
-const Eigen::Matrix<T, 3, 1> &em_post,
-const Eigen::Matrix<T, 3, 1> &opt_post
-) {
-if (data.
-
-size()
-
-< 1) throw std::invalid_argument("Invalid data vector.");
-
-out << data.at(0).
-
-size()
-
-<< ',' << data.
-
-size()
-
-<< ',' << file_name << '\n'
-<< em_post(0) << ',' << em_post(1) << ',' << em_post(2) << '\n'
-<< opt_post(0) << ',' << opt_post(1) << ',' << opt_post(2) << '\n';
-
-for (
-const auto &frame :
-data) {
-for (
-size_t i = 0;
-i<frame.
-
-size();
-
-++i) {
-out << frame.
-at(i)(0)
-<< ',' << frame.
-at(i)(1)
-<< ',' << frame.
-at(i)(2)
-<< '\n';
-}
-}
-out <<
-std::flush;
-}
+        for (const auto &frame : data) {
+            for (size_t i = 0; i < frame.size(); ++i) {
+                out << frame.at(i)(0) << ',' << frame.at(i)(1) << ',' << frame.at(i)(2) << '\n';
+            }
+        }
+        out << std::flush;
+    }
 }
 
 /*************** TEST CASES ***************/
@@ -632,14 +582,14 @@ TEST_CASE ("Optical Pivot File") {
 TEST_CASE ("Output Writer") {
     std::stringstream dest;
     cis::PointCloud<double> pc;
-    pc.add_point({0, 0, 0});
-    pc.add_point({1, 1, 1});
-    pc.add_point({2, 2, 2});
+    pc.add_point({0,0,0});
+    pc.add_point({1,1,1});
+    pc.add_point({2,2,2});
     std::vector<cis::PointCloud<double>> frames = {pc, pc};
-    Eigen::Matrix<double, 3, 1> pt = {1, 2, 3};
+    Eigen::Matrix<double,3,1> pt = {1,2,3};
     cis::output_writer(dest, "out.txt", frames, pt, pt);
 
-            CHECK((dest.str()) == "3,2,out.txt\n1,2,3\n1,2,3\n0,0,0\n1,1,1\n2,2,2\n0,0,0\n1,1,1\n2,2,2\n");
+    CHECK((dest.str()) == "3,2,out.txt\n1,2,3\n1,2,3\n0,0,0\n1,1,1\n2,2,2\n0,0,0\n1,1,1\n2,2,2\n");
 }
 
 #endif //CIS_CAL_FILES_H
