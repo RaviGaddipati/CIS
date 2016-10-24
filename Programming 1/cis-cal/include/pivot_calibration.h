@@ -44,7 +44,9 @@ namespace cis {
 
         // Compute the transformation and build A, b matricies
         for (size_t i = 0; i < frames.size(); ++i) {
-            const auto trans = cloud_to_cloud(reference_frame, frames.at(i));
+            auto trans = cloud_to_cloud(reference_frame, frames.at(i));
+            std::cout << trans * reference_frame.at(0) << "; " << frames.at(i).at(0) << "\n-------\n" << std::endl;
+            //std::cout << trans.matrix() << "\n-------\n" << std::endl;
             A.block(3 * i, 0, 3, 3) = trans.rotation();
             A.block(3 * i, 3, 3, 3) = neg_ident;
             b.block(3 * i, 0, 3, 1) = -trans.translation(); //Needs to be the negative translation
@@ -75,17 +77,20 @@ TEST_CASE ("Pivot Calibration") {
 
     std::vector<PointCloud<double>> frames;
 
-    probe_cloud.center_self();
+
+    //probe_cloud.center_self();
 
     // Create frames by rotating around the post
     for (size_t i = 0; i < num_frames; ++i) {
         Eigen::Transform<double, 3, Eigen::Affine> trans(
                 // Move to origin, rotate, move back to post
-                Eigen::Translation<double, 3>(post - t) *
-                Eigen::AngleAxis<double>(i * .3, Eigen::Vector3d::UnitZ()) *
-                Eigen::AngleAxis<double>(i * .2, Eigen::Vector3d::UnitY()) *
-                Eigen::AngleAxis<double>(i * .1, Eigen::Vector3d::UnitX())
+                Eigen::Translation<double, 3>(post) *
+                Eigen::AngleAxis<double>(i * 1, Eigen::Vector3d::UnitZ()) *
+                Eigen::AngleAxis<double>(i * 1, Eigen::Vector3d::UnitY()) *
+                Eigen::AngleAxis<double>(i * 1, Eigen::Vector3d::UnitX()) *
+                Eigen::Translation<double, 3>(-post)
         );
+        std::cout << trans * probe_cloud.at(0) << "\n--\n" << std::endl;
         frames.push_back(probe_cloud.transform(trans));
     }
 
