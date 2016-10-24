@@ -1,5 +1,5 @@
 /**
- * @author Ravi Gaddipati
+ * @author Ravi Gaddipati, Doran Walsten
  * @date October 13, 2016
  * rgaddip1@jhu.edu
  *
@@ -14,14 +14,14 @@
 
 #include "Eigen"
 #include <vector>
+#include <doctest.h>
 
 /**
  * @brief
  * Represents a 3D point cloud.
  */
 namespace cis {
-    template<typename T=double>
-    class PointCloud {
+    template<typename T=double> class PointCloud {
     public:
         typedef Eigen::Matrix<T, 3, 1> Point;
         typedef Eigen::Array<T, Eigen::Dynamic, 3> PointStore;
@@ -217,6 +217,11 @@ namespace cis {
     };
 }
 
+/**
+ * @param os output stream to write to
+ * @param pc Prints the pointstore of the point cloud
+ * @return stream
+ */
 template <typename T>
 std::ostream &operator<<(std::ostream &os, const cis::PointCloud<T> &pc) {
     os << pc.point_store();

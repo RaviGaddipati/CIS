@@ -1,27 +1,33 @@
-//
-// Created by Doran W on 10/17/16.
-//
+/**
+ * @author Ravi Gaddipati, Doran Walsten
+ * @date October 23, 2016
+ * rgaddip1@jhu.edu
+ *
+ * @brief
+ * Performs a pivot calibration.
+ *
+ * @file
+ */
 
 #ifndef CIS_CAL_PIVOT_CALIBRATION_H
 #define CIS_CAL_PIVOT_CALIBRATION_H
 
 #include "horn.h"
+#include <doctest.h>
 
-
-//Use this header file to define the operations necessary to complete the pivot calibration
 namespace cis {
-/**
- * @brief
- * Given multiple frames, compute the post location as well as the vector from the first frame to the tip.
- * @details
- * The system Ax=b is formed and solved for x, for frames 0..N
- * A = {{R_0,-I},...,{R_N,-I}}
- * x = {{t},{post}}^T
- * b = {{-p_0},...,{-p_n}}^T
- * where {R_i,p_i} = the trasnformation of the frame from the origin to the frame.
- * @param readings
- * @return x vector: {t, post}
- */
+    /**
+     * @brief
+     * Given multiple frames, compute the post location as well as the vector from the first frame to the tip.
+     * @details
+     * The system Ax=b is formed and solved for x, for frames 0..N
+     * A = {{R_0,-I},...,{R_N,-I}}
+     * x = {{t},{post}}^T
+     * b = {{-p_0},...,{-p_n}}^T
+     * where {R_i,p_i} = the trasnformation of the frame from the origin to the frame.
+     * @param readings
+     * @return x vector: {t, post}
+     */
     template<typename T>
     Eigen::Matrix<T, 6, 1>
     pivot_calibration(const std::vector<PointCloud<T>> &frames) {

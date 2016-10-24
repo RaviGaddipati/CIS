@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
+#include <doctest.h>
 #include "utils.h"
 #include "pointcloud.h"
 

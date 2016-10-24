@@ -11,4 +11,4 @@ include_directories(eigen/Eigen include doctest/doctest)
 
 set(SOURCE_FILES src/main.cpp src/utils.cpp)
 
-add_executable(cis_cal ${SOURCE_FILES})
+add_executable(ciscal ${SOURCE_FILES})
