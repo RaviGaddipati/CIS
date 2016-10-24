@@ -31,7 +31,6 @@ namespace cis {
     template<typename T>
     Eigen::Matrix<T, 6, 1>
     pivot_calibration(const std::vector<PointCloud<T>> &frames) {
-        if (frames.size() < 2) throw std::invalid_argument("At least 2 frames required for a complete solution.");
         // The first frame is moved to the tracker origin
         const auto reference_frame = frames.at(0).center();
 
@@ -44,10 +43,10 @@ namespace cis {
 
         // Compute the transformation and build A, b matricies
         for (size_t i = 0; i < frames.size(); ++i) {
-            const auto trans = cloud_to_cloud(reference_frame, frames.at(i));
-            A.block(3 * i, 0, 3, 3) = trans.rotation();
+            const auto trans = reference_frame.transformation_to(frames.at(i));
+            A.block(3 * i, 0, 3, 3) = trans.rotation().matrix();
             A.block(3 * i, 3, 3, 3) = neg_ident;
-            b.block(3 * i, 0, 3, 1) = -trans.translation(); //Needs to be the negative translation
+            b.block(3 * i, 0, 3, 1) = -trans.translation().matrix(); //Needs to be the negative translation
         }
 
         // Solve the system
@@ -72,7 +71,6 @@ TEST_CASE ("Pivot Calibration") {
     //The "tip" is the vector from the centroid of the point cloud to the post
     const auto t = post - probe_cloud.centroid();
 
-
     std::vector<PointCloud<double>> frames;
 
     probe_cloud.center_self();
@@ -80,7 +78,7 @@ TEST_CASE ("Pivot Calibration") {
     // Create frames by rotating around the post
     for (size_t i = 0; i < num_frames; ++i) {
         Eigen::Transform<double, 3, Eigen::Affine> trans(
-                // Move to origin, rotate, move back to post
+                // rotate, move back to post
                 Eigen::Translation<double, 3>(post - t) *
                 Eigen::AngleAxis<double>(i * .3, Eigen::Vector3d::UnitZ()) *
                 Eigen::AngleAxis<double>(i * .2, Eigen::Vector3d::UnitY()) *
