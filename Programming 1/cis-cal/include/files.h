@@ -40,8 +40,8 @@ namespace cis {
 
         virtual void open(std::istream &) = 0;
 
-        virtual size_t size() {
-            return _clouds.size() > 0 ? _clouds[0].size() : 0;
+        virtual size_t size() const  {
+            return _clouds.size() > 0 ? _clouds.at(0).size() : 0;
         };
 
         virtual std::string name() const {

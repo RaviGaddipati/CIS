@@ -156,7 +156,7 @@ namespace cis {
          */
         PointCloud<T> transform(const Eigen::Transform<double, 3, Eigen::Affine> &trans) const {
             PointCloud<T> ret(*this);
-            for (size_t i = 0; i < ret._cloud_matrix.cols(); ++i) {
+            for (size_t i = 0; i < ret._cloud_matrix.rows(); ++i) {
                 ret._cloud_matrix.row(i) = trans * ret.at(i);
             }
             return ret;
@@ -168,7 +168,7 @@ namespace cis {
          */
         PointCloud<T> transform_linear(const Eigen::Transform<double, 3, Eigen::Affine> &trans) const {
             PointCloud<T> ret(*this);
-            for (size_t i = 0; i < ret._cloud_matrix.cols(); ++i) {
+            for (size_t i = 0; i < ret._cloud_matrix.rows(); ++i) {
                 ret._cloud_matrix.row(i) = trans.linear() * ret.at(i);
             }
             return ret;
@@ -179,7 +179,7 @@ namespace cis {
          * Apply a transformaion to each point, modifies this.
          */
         PointCloud<T> &transform_self(const Eigen::Transform<double, 3, Eigen::Affine> &trans) {
-            for (size_t i = 0; i < _cloud_matrix.cols(); ++i) {
+            for (size_t i = 0; i < _cloud_matrix.rows(); ++i) {
                 _cloud_matrix.row(i) = trans * at(i);
             }
             return *this;
@@ -190,7 +190,7 @@ namespace cis {
          * Apply a transformaion to each point (as a vector), modifies this.
          */
         PointCloud<T> &transform_linear_self(const Eigen::Transform<double, 3, Eigen::Affine> &trans) {
-            for (size_t i = 0; i < _cloud_matrix.cols(); ++i) {
+            for (size_t i = 0; i < _cloud_matrix.rows(); ++i) {
                 _cloud_matrix.row(i) = trans.linear() * at(i);
             }
             return *this;

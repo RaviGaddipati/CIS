@@ -25,13 +25,13 @@ namespace cis {
      * x = {{t},{post}}^T
      * b = {{-p_0},...,{-p_n}}^T
      * where {R_i,p_i} = the trasnformation of the frame from the origin to the frame.
-     * @param readings
+     * @param frames
      * @return x vector: {t, post}
      */
     template<typename T>
     Eigen::Matrix<T, 6, 1>
     pivot_calibration(const std::vector<PointCloud<T>> &frames) {
-        // The first frame is moved to the tracker origin
+        // The first frame is moved to the origin
         const auto reference_frame = frames.at(0).center();
 
         // {{R_0,-I},...,{R_N,-I}}
@@ -52,13 +52,48 @@ namespace cis {
         // Solve the system
         return A.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV).solve(b);
     }
+
+     /**
+     * @brief
+     * Given multiple frames, compute the post location as well as the vector from the first frame to the tip.
+      * Uses 2 frame vectors, where the optical tracker position can change relative to the EM tracker.
+     * @details
+     * The system Ax=b is formed and solved for x, for frames 0..N
+     * A = {{R_OH^N,-R_OD^N},...,{R_OH^N,-R_OD^N}}
+     * x = {{t},{post}}^T
+     * b = {{p_OD_n - p_OH_n},...,{p_OD_n - p_OH_n}}^T
+     * where {R_i,p_i} = the trasnformation of the frame from the origin to the frame.
+     * @param opt Optical tracker frames
+     * @param em EM tracker frames
+     * @return x vector: {t, post}
+     */
+    template<typename T>
+    Eigen::Matrix<T, 6, 1>
+    pivot_calibration_opt(const std::vector<PointCloud<T>> &opt, const std::vector<PointCloud<T>> &em) {
+         if (opt.size() != em.size()) throw std::invalid_argument("Both vectors must be the same size.");
+        // The first frame is moved to the origin
+        const PointCloud<T> em_reference_frame = em.at(0).center();
+         std::vector<PointCloud<T>> trans_opt(opt.size());
+         Eigen::Matrix<T, 4, 4> transmat;
+         for (int j = 0; j < opt.size(); ++j) {
+             const auto trans = em_reference_frame.transformation_to(em.at(j));
+             transmat.block(0,0,3,3) = trans.rotation().matrix().inverse();
+             transmat.block(0,3,3,1) = -trans.rotation().matrix().inverse() * trans.translation();
+             transmat.block(3,0,1,4) = Eigen::Matrix<double,1,4>{0,0,0,1};
+             PointCloud<T> n;
+             for (int i = 0; i < opt.at(j).size(); ++i) {
+                 n.add_point((transmat * opt.at(j).at(i).homogeneous()).block(0,0,3,1));
+             }
+             trans_opt[j] = n;
+         }
+         return pivot_calibration(trans_opt);
+    }
 }
 
 TEST_CASE ("Pivot Calibration") {
     using namespace cis;
 
-    const int num_frames = 10;
-    const int num_points = 10;
+    const size_t num_frames = 10;
 
     // Vector to the post in space
     const Eigen::Matrix<double, 3, 1> post = {1, 1, 1};//Eigen::Matrix<double, 3, 1>::Random();
@@ -69,21 +104,18 @@ TEST_CASE ("Pivot Calibration") {
                                            {3, 2, 1}}};
 
     //The "tip" is the vector from the centroid of the point cloud to the post
-    const auto t = post - probe_cloud.centroid();
+    const Eigen::Matrix<double, 3, 1> t = post - probe_cloud.centroid();
 
     std::vector<PointCloud<double>> frames;
-
-
-    //probe_cloud.center_self();
 
     // Create frames by rotating around the post
     for (size_t i = 0; i < num_frames; ++i) {
         Eigen::Transform<double, 3, Eigen::Affine> trans(
-                // Move to origin, rotate, move back to post
+                // rotate, move back to post
                 Eigen::Translation<double, 3>(post) *
-                Eigen::AngleAxis<double>(i * 1, Eigen::Vector3d::UnitZ()) *
-                Eigen::AngleAxis<double>(i * 1, Eigen::Vector3d::UnitY()) *
-                Eigen::AngleAxis<double>(i * 1, Eigen::Vector3d::UnitX()) *
+                Eigen::AngleAxis<double>(i * .3, Eigen::Vector3d::UnitZ()) *
+                Eigen::AngleAxis<double>(i * .2, Eigen::Vector3d::UnitY()) *
+                Eigen::AngleAxis<double>(i * .1, Eigen::Vector3d::UnitX()) *
                 Eigen::Translation<double, 3>(-post)
         );
         std::cout << trans * probe_cloud.at(0) << "\n--\n" << std::endl;
@@ -91,7 +123,9 @@ TEST_CASE ("Pivot Calibration") {
     }
 
     auto pred_t = pivot_calibration(frames);
-    std::cout << "\nActual:\n" << t << '\n' << post << "\n\nPredicted:\n" << pred_t << std::endl;
+
+    CHECK(t.isApprox(pred_t.block(0,0,3,1)));
+    CHECK(post.isApprox(pred_t.block(3,0,3,1)));
 }
 
 
