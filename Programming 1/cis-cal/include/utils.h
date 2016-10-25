@@ -17,6 +17,7 @@
 #define __INLINE__ inline
 #endif
 
+#include "Eigen"
 #include <vector>
 #include <fstream>
 #include <algorithm>
@@ -61,6 +62,18 @@ inline bool file_exists(std::string filename) {
  */
 int nChoosek(int n, int k);
 
+/**
+ * @brief
+ * Prints a point as a CSV line.
+ * @param os Stream to print to
+ * @param p Point
+ * @return os
+ */
+template <typename T>
+std::ostream &print_point(std::ostream &os, const Eigen::Matrix<T, 3, 1> &p) {
+    os << p(0) << ',' << p(1) << ',' << p(2);
+    return os;
+}
 
 //Potentially add a test case to make sure that the combination is working?
 

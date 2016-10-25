@@ -61,12 +61,11 @@ namespace cis {
             }
         }
         return F;
-    };
+    }
 }
 
 TEST_CASE("Bernstein Test Cases") {
     using namespace cis;
-    const int num_points = 10;
     PointCloud<double> pc1{{{1, 2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}, {3, 8, 7}}};
     cis::Point q_min = {-1, 0, 0};
     cis::Point q_max = {3,8,7};

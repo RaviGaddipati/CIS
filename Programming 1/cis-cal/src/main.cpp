@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <doctest.h>
+#include "utils.h"
 #include "pivot_calibration.h"
 #include "pointcloud.h"
 #include "files.h"
@@ -38,6 +39,14 @@ void printusage();
  * @param f2 File 2
  */
 void error_report(const std::string &f1, const std::string &f2);
+
+/**
+ * @brief
+ * Prints the error for PA 2
+ * @param f1 File 1
+ * @param f2 File 2
+ */
+void error_report_2(const std::string &f1, const std::string &f2);
 
 int main(const int argc, const char *argv[]) {
     if (argc != 2) {
@@ -60,13 +69,16 @@ int main(const int argc, const char *argv[]) {
                 calreadings_file = fileroot + "-calreadings.txt",
                 empivot_file = fileroot + "-empivot.txt",
                 optpivot_file = fileroot + "-optpivot.txt",
+                ctfid_file = fileroot + "-ct-fiducials.txt",
+                emfid_file = fileroot + "-em-fiducialss.txt",
+                emnav_file = fileroot + "-EM-nav.txt",
                 output1_debug = fileroot + "-output1.txt",
+                output2_debug = fileroot + "-output2.txt",
                 output1_file = "OUTPUT/" + filename + "-output-1.txt",
-                output2_file = "OUTPUT/" + filename + "-output-2.txt";
+                output2_file = "OUTPUT/" + filename + "-output2.txt";
 
 
     // Open all the files.
-
     cis::CalBody<double> calbody(calbody_file);
     cis::CalReadings<double> calreadings(calreadings_file);
     cis::EMPivot<double> empivot(empivot_file);
@@ -89,19 +101,15 @@ int main(const int argc, const char *argv[]) {
     if (file_exists(output1_debug)) {
         error_report(output1_file, output1_debug);
     }
-}
 
-/**
- * @brief
- * Prints a point as a CSV line.
- * @param os Stream to print to
- * @param p Point
- * @return os
- */
-template <typename T>
-std::ostream &print_point(std::ostream &os, const Eigen::Matrix<T, 3, 1> &p) {
-    os << p(0) << ',' << p(1) << ',' << p(2);
-    return os;
+    // PA 2
+    if (file_exists(ctfid_file) && file_exists(emfid_file) && file_exists(emnav_file)) {
+        // We have files for problem 2
+
+        if (file_exists(output2_debug)) {
+            error_report_2(output2_file, output2_debug);
+        }
+    }
 }
 
 
@@ -138,6 +146,20 @@ void error_report(const std::string &f1, const std::string &f2) {
     std::cerr << "\nAverage RMS error:\t";
     total_error.array() /= a.expected().size();
     print_point(std::cerr, total_error);
+    std::cerr << '\n' << std::endl;
+}
+
+void error_report_2(const std::string &f1, const std::string &f2) {
+    cis::OutputParser2<double> a(f1), b(f2);
+    assert(a.probe_tip().size() == b.probe_tip().size());
+    std::cerr << "\n\nComparing:\t" << a.name() << "\t" << b.name() << std::endl;
+    Eigen::Matrix<double, 3, 1> total{0,0,0};
+    for (size_t i = 0; i < a.probe_tip().size(); ++i) {
+        total += a.probe_tip().at(i) - b.probe_tip().at(i);
+    }
+    total.array() /= a.probe_tip().size();
+    std::cerr << "Average Error: ";
+    print_point(std::cerr, total);
     std::cerr << '\n' << std::endl;
 }
 

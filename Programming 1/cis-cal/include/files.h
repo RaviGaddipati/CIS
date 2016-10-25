@@ -324,14 +324,148 @@ namespace cis {
          * @return vector of frames of optical markers on the EM base.
          */
         const std::vector<PointCloud<T>> &opt_marker_embase() const {
-            return this->_clouds[0];
+            return this->_clouds.at(0);
         }
 
         /**
          * @return vector of frames of optical markers on the probe.
          */
         const std::vector<PointCloud<T>> &opt_marker_probe() const {
-            return this->_clouds[1];
+            return this->_clouds.at(1);
+        }
+    };
+
+    /**
+     * PA2 CT Fiducial file parser.
+     */
+    template <typename T>
+    class CTFiducials : public File<T> {
+        using File<T>::open;
+    public:
+        CTFiducials() {}
+
+        CTFiducials(std::string filename) {
+            open(filename);
+        }
+
+        /**
+         * @param in Parse the input stream.
+         */
+        void open(std::istream &in) {
+            // Parse meta info
+            std::string line;
+            std::getline(in, line);
+            line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+            auto line_split = split(line, ',');
+
+            size_t nb;
+            try {
+                nb = std::stoul(line_split[0]);
+                this->_name = line_split[1];
+            } catch (std::exception &e) {
+                std::cerr << "Error parsing meta info line, expected 2 fields. \n" << line << std::endl;
+                throw;
+            }
+
+            this->_clouds.resize(1);
+            this->_clouds[0].resize(1);
+            this->_parse_coordinates(in, nb, this->_clouds[0][0]);
+
+        }
+
+        const PointCloud<T> &CT_fiducials() const {
+            return this->_clouds.at(0).at(0);
+        }
+
+    };
+
+    /**
+     * PA 2 EM Fiducials.
+     */
+    template <typename T>
+    class EMFiducials : public File<T> {
+        using File<T>::open;
+    public:
+        EMFiducials() {}
+
+        EMFiducials(std::string file) {
+            open(file);
+        }
+
+        /**
+         * @param in Parse the input stream.
+         */
+        void open(std::istream &in) {
+            // Parse meta info
+            std::string line;
+            std::getline(in, line);
+            line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+            auto line_split = split(line, ',');
+
+            size_t ng, nf;
+            try {
+                ng = std::stoul(line_split[0]);
+                nf = std::stoul(line_split[1]);
+                this->_name = line_split[2];
+            } catch (std::exception &e) {
+                std::cerr << "Error parsing meta info line, expected 3 fields. \n" << line << std::endl;
+                throw;
+            }
+
+            this->_clouds.resize(2);
+            for (auto &c : this->_clouds) c.resize(nf);
+            for (size_t frame = 0; frame < nf; ++frame) {
+                this->_parse_coordinates(in, ng, this->_clouds[0][frame]);
+            }
+        }
+
+        const std::vector<PointCloud<T>> &EM_fiducials() const {
+            return this->_clouds.at(0);
+        }
+    };
+
+
+    /**
+     * PA2 EM markers on the probe.
+     */
+    template <typename T>
+    class EMNav : public File<T> {
+        using File<T>::open;
+    public:
+        EMNav() {}
+        EMNav(std::string file) {
+            open(file);
+        }
+
+        /**
+         * @param in Parse the input stream.
+         */
+        void open(std::istream &in) {
+            // Parse meta info
+            std::string line;
+            std::getline(in, line);
+            line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+            auto line_split = split(line, ',');
+
+            size_t ng, nf;
+            try {
+                ng = std::stoul(line_split[0]);
+                nf = std::stoul(line_split[1]);
+                this->_name = line_split[2];
+            } catch (std::exception &e) {
+                std::cerr << "Error parsing meta info line, expected 3 fields. \n" << line << std::endl;
+                throw;
+            }
+
+            this->_clouds.resize(1);
+            for (auto &c : this->_clouds) c.resize(nf);
+            for (size_t frame = 0; frame < nf; ++frame) {
+                this->_parse_coordinates(in, ng, this->_clouds[0][frame]);
+            }
+        }
+
+        const std::vector<PointCloud<T>> &em_markers_probe() const {
+            return this->_clouds[0];
         }
     };
 
@@ -410,6 +544,80 @@ namespace cis {
     };
 
     /**
+     * @brief
+     * Parses the output file for PA 2.
+     */
+    template <typename T>
+    class OutputParser2 {
+    public:
+        OutputParser2 () {}
+
+        OutputParser2 (std::string file) {
+            open(file);
+        }
+
+        void open(std::string file) {
+            std::ifstream in(file);
+            if (!in.good()) throw std::invalid_argument("Error opening file: " + file);
+            open(in);
+        }
+
+        void open(std::istream &in) {
+            // Parse meta info
+            std::string line;
+            std::getline(in, line);
+            line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+            auto line_split = split(line, ',');
+
+            size_t nf;
+            try {
+                nf = std::stoul(line_split[0]);
+                this->_name = line_split[1];
+            } catch (std::exception &e) {
+                std::cerr << "Error parsing meta info line, expected 2 fields. \n" << line << std::endl;
+                throw;
+            }
+
+            _points.clear();
+            for (size_t frame = 0; frame < nf; ++frame) {
+                if(!std::getline(in, line)) {
+                    throw std::invalid_argument("Reached end of file, expected " +
+                                                        std::to_string(nf) + "frames, got " +
+                                                        std::to_string(frame));
+                }
+                line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+                split(line, ',', line_split);
+                try {
+                    _points.emplace_back(std::stod(line_split[0]), std::stod(line_split[1]), std::stod(line_split[2]));
+                } catch (std::exception &e) {
+                    std::cerr << "Error parsing line: " << line << std::endl;
+                    throw;
+                }
+            }
+        }
+
+        /**
+         * Probe tip in each frame.
+         * @return vector of points
+         */
+        const std::vector<typename PointCloud<T>::Point> &probe_tip() const {
+            return _points;
+        }
+
+        /**
+         * @return Return file name.
+         */
+        std::string name() const {
+            return _name;
+        }
+
+    private:
+        std::vector<typename PointCloud<T>::Point> _points;
+        std::string _name;
+
+    };
+
+    /**
      * @param file_name Write the data to this file
      * @param data Vector of frames of PointClouds to write
      * @param em_post position of the post found by EM Pivot
@@ -450,6 +658,28 @@ namespace cis {
             }
         }
         out << std::flush;
+    }
+
+    /**
+     * Output writer for PA 2.
+     * @param os output stream
+     * @param name filename
+     * @param frames of data
+     */
+    template <typename T>
+    void output_writer(std::ostream &os, std::string name, const std::vector<typename PointCloud<T>::Point> &frames) {
+        os << frames.size() << ',' << name << '\n';
+        for (const auto &p : frames) {
+            print_point(os, p);
+            os << '\n';
+        }
+    }
+
+    template <typename T>
+    void ouput_writer(std::string filename, const std::vector<typename PointCloud<T>::Point> &frames) {
+        std::ofstream out(filename);
+        if (!out.good()) throw std::invalid_argument("Error opening output file: " + filename);
+        output_writer(out, filename, frames);
     }
 }
 

@@ -80,7 +80,6 @@ namespace cis {
 
 TEST_CASE ("Horn cloud-to-cloud") {
 using namespace cis;
-    const int num_points = 10;
     PointCloud<double> pc1{{{1, 2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}, {3, 8, 7}}};
     {
         Eigen::Translation<double, 3> trans(1, 1, 1);
