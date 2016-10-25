@@ -118,7 +118,6 @@ TEST_CASE ("Pivot Calibration") {
                 Eigen::AngleAxis<double>(i * .1, Eigen::Vector3d::UnitX()) *
                 Eigen::Translation<double, 3>(-post)
         );
-        std::cout << trans * probe_cloud.at(0) << "\n--\n" << std::endl;
         frames.push_back(probe_cloud.transform(trans));
     }
 

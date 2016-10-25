@@ -23,6 +23,7 @@
 #include "pointcloud.h"
 #include "files.h"
 #include "distortion_calibration.h"
+#include "bernstein.h"
 
 /**
  * CLI Usage information.

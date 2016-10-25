@@ -9,6 +9,6 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 include_directories(eigen/Eigen include doctest/doctest)
 
-set(SOURCE_FILES src/main.cpp src/utils.cpp)
+set(SOURCE_FILES src/main.cpp src/utils.cpp include/bernstein.h)
 
 add_executable(ciscal ${SOURCE_FILES})

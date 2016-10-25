@@ -52,4 +52,16 @@ inline bool file_exists(std::string filename) {
     return f.good();
 }
 
+/**
+ * Compute n choose k to get the number of possible combinations. Inspired by work completed on Stack Overflow:
+ * http://stackoverflow.com/questions/9330915/number-of-combinations-n-choose-r-in-c
+ * @param n - size of collection
+ * @param k - number of entries to select
+ * @return The number of potential combinations
+ */
+int nChoosek(int n, int k);
+
+
+//Potentially add a test case to make sure that the combination is working?
+
 #endif //CIS_CAL_UTILS_H
