@@ -20,10 +20,11 @@
 
 #include <iostream>
 #include <doctest.h>
-//#include "distortion_calibration.h"
 #include "pivot_calibration.h"
 #include "pointcloud.h"
 #include "files.h"
+#include "distortion_calibration.h"
+
 
 void printusage();
 
@@ -60,9 +61,17 @@ int main(const int argc, const char *argv[]) {
     cis::EMPivot<double> empivot(empivot_file);
     cis::OptPivot<double> optpivot(optpivot_file);
 
-    const Eigen::Matrix<double, 3, 1> em_post = cis::pivot_calibration(empivot.em_marker_probe()).block(0,0,3,1);
+    const Eigen::Matrix<double, 3, 1> em_post = cis::pivot_calibration(empivot.em_marker_probe()).block(3,0,3,1);
+    const Eigen::Matrix<double, 3, 1> opt_post = cis::pivot_calibration_opt(optpivot.opt_marker_probe(), optpivot.opt_marker_embase()).block(3,0,3,1);
+        auto expected = cis::distortion_calibration(calbody, calreadings);
 
-    return 0;
+    cis::output_writer(std::cout, output1_file, expected, em_post, opt_post);
+    std::cout << em_post << '\n' << opt_post << std::endl;
+
+}
+
+void error_report(std::ostream &os, std::istream &is1, std::istream &is2, const bool tex=false) {
+
 }
 
 void printusage() {
