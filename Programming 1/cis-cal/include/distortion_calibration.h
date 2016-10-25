@@ -20,6 +20,13 @@
 
 namespace cis {
 
+    /**
+     * @brief
+     * Computes the expected values of the points after compensating from distortion.
+     * @param body
+     * @param readings
+     * @return Expected cords
+     */
     template<typename T>
     std::vector<PointCloud<T>> distortion_calibration(const CalBody<T> &body, const CalReadings<T> &readings) {
 

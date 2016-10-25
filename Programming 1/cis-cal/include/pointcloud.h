@@ -15,6 +15,7 @@
 #include "Eigen"
 #include "horn.h"
 #include <vector>
+#include <cmath>
 #include <doctest.h>
 
 /**
@@ -257,6 +258,24 @@ namespace cis {
             return ret;
         }
 
+        /**
+         * @brief
+         * Returns the RMS error between the two clouds.
+         * @param pc
+         * @return Point with error of each coord
+         */
+        Eigen::Matrix<double,3,1> RMS_error(const PointCloud<T> &pc) const {
+            if (size() != pc.size()) throw std::invalid_argument("Point clouds should be the same size.");
+            const auto s = size();
+            double sx = 0,sy = 0,sz = 0;
+            for (int i = 0; i < s; ++i) {
+                sx += (pc.at(i)(0) - at(i)(0)) * (pc.at(i)(0) - at(i)(0));
+                sy += (pc.at(i)(1) - at(i)(1)) * (pc.at(i)(1) - at(i)(1));
+                sz += (pc.at(i)(2) - at(i)(2)) * (pc.at(i)(2) - at(i)(2));
+            }
+            return Eigen::Matrix<double,3,1>(sqrt(sx/s), sqrt(sy/s), sqrt(sz/s));
+        }
+
     private:
         PointStore _cloud_matrix; // Stores all the points.
     };
@@ -317,6 +336,12 @@ TEST_CASE ("Point Cloud") {
         p = {0,-2,3};
                 CHECK(c.at(3) == p);
 
+    }
+
+    SUBCASE("RMS") {
+        PointCloud<double> pc2(points);
+        PointCloud<double>::Point p{0,0,0};
+        CHECK(pc.RMS_error(pc2).isApprox(p));
     }
 }
 

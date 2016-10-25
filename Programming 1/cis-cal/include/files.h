@@ -336,6 +336,80 @@ namespace cis {
     };
 
     /**
+     * @brief
+     * Parses an output file, primarily to compute error.
+     */
+    template <typename T>
+    class OutputPraser : public File<T> {
+    public:
+        using File<T>::open;
+        OutputPraser() {}
+        OutputPraser(std::string file) {open(file);}
+
+        void open(std::istream &in) {
+            // Parse meta info
+            std::string line;
+            std::getline(in, line);
+            line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+            auto line_split = split(line, ',');
+
+            size_t nc, nf;
+            try {
+                nc = std::stoul(line_split[0]);
+                nf = std::stoul(line_split[1]);
+                this->_name = line_split[2];
+            } catch (std::exception &e) {
+                std::cerr << "Error parsing meta info line, expected 4 fields. \n" << line << std::endl;
+                throw;
+            }
+
+            // EM Post coords
+            std::getline(in, line);
+            line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+            split(line, ',', line_split);
+            assert(line_split.size() == 3);
+            _em_post = {std::stod(line_split[0]), std::stod(line_split[1]), std::stod(line_split[2])};
+            // Opt post
+            std::getline(in, line);
+            line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+            split(line, ',', line_split);
+            assert(line_split.size() == 3);
+            _opt_post = {std::stod(line_split[0]), std::stod(line_split[1]), std::stod(line_split[2])};
+
+
+            this->_clouds.resize(2);
+            for (auto &c : this->_clouds) c.resize(nf);
+            for (size_t frame = 0; frame < nf; ++frame) {
+                this->_parse_coordinates(in, nc, this->_clouds[0][frame]);
+            }
+        }
+
+        /**
+         * @return Expected points
+         */
+        const std::vector<PointCloud<T>> &expected() const {
+            return this->_clouds[0];
+        }
+
+        /**
+         * @return Reported Post position from EM Tracker
+         */
+        const typename PointCloud<T>::Point &em_post() const {
+            return _em_post;
+        }
+
+        /**
+         * @return Reported Post position from Optical
+         */
+        const typename PointCloud<T>::Point &opt_post() const {
+            return _opt_post;
+        }
+
+    private:
+        typename PointCloud<T>::Point _em_post, _opt_post;
+    };
+
+    /**
      * @param file_name Write the data to this file
      * @param data Vector of frames of PointClouds to write
      * @param em_post position of the post found by EM Pivot
