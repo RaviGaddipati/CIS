@@ -145,7 +145,7 @@ void printusage() {
               << __DATE__ << "\n\n"
               << "Usage:\n\tciscal <fileroot>\n\nThe following files should exist:\n\tfileroot-calbody.txt"
               << "\n\tfileroot-calreadings.txt\n\tfileroot-empivot.txt\n\tfileroot-optpivot.txt\n"
-              << "Output file written to:\n\tOUTPUT/fileroot-output-1.txt\n\n"
+              << "Output file written to:\n\tOUTPUT/filename-output-1.txt\n\tWhere filename does not include the path.\n\n"
               << "To run test cases and exit:\n\tciscal test\n\n"
               << "This program makes use of Eigen (eigen.tuxfamily.org) and doctest (github.com/onqtam/doctest)\n"
               << std::endl;
