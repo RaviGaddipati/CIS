@@ -43,7 +43,7 @@ namespace cis {
 
         // Compute the transformation and build A, b matricies
         for (size_t i = 0; i < frames.size(); ++i) {
-            const auto trans = reference_frame.transformation_to(frames.at(i));
+            const auto trans = cloud_to_cloud(reference_frame, frames.at(i));
             A.block(3 * i, 0, 3, 3) = trans.rotation().matrix();
             A.block(3 * i, 3, 3, 3) = neg_ident;
             b.block(3 * i, 0, 3, 1) = -trans.translation().matrix(); //Needs to be the negative translation
@@ -76,7 +76,7 @@ namespace cis {
          std::vector<PointCloud<T>> trans_opt(opt.size());
          Eigen::Matrix<T, 4, 4> transmat;
          for (int j = 0; j < opt.size(); ++j) {
-             const auto trans = em_reference_frame.transformation_to(em.at(j));
+             const auto trans = cloud_to_cloud(em_reference_frame, em.at(j));
              transmat.block(0,0,3,3) = trans.rotation().matrix().inverse();
              transmat.block(0,3,3,1) = -trans.rotation().matrix().inverse() * trans.translation();
              transmat.block(3,0,1,4) = Eigen::Matrix<double,1,4>{0,0,0,1};

@@ -47,8 +47,8 @@ namespace cis {
      * @param u - Input Point, must be bounded between 0 - 1 for all coordinates
      * @return Vector representing the interpolation polynomial F_000 ... F_555
      */
-    Eigen::Matrix<double, 1, 125> computeF(Point u) {
-        Eigen::Matrix<double, 1, 125> F = Eigen::Matrix<double, 1, 125>::Zero(); //Initialize to 0
+    Eigen::Matrix<double, 1, 216> computeF(const Point &u) {
+        Eigen::Matrix<double, 1, 216> F = Eigen::Matrix<double, 1, 216>::Zero(); //Initialize to 0
         int counter = 0;
         for (int i = 0; i <= 5; i++) {
             double B_i = bernstein(i, 5, u(0));

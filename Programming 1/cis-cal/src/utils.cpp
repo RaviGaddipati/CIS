@@ -78,3 +78,43 @@ int nChoosek(int n, int k) {
     }
     return res;
 }
+
+template <typename T>
+const typename cis::PointCloud<T>::Point min(const std::vector<cis::PointCloud<T>> &cloud) {
+    using namespace cis;
+    typename PointCloud<T>::Point min;
+    {
+        const typename PointCloud<T>::PointStore &pcs = cloud.at(0).point_store();
+        min(0) = pcs.col(0).minCoeff();
+        min(1) = pcs.col(1).minCoeff();
+        min(2) = pcs.col(2).minCoeff();
+    }
+    T v;
+    for (const PointCloud<T> &pc : cloud) {
+        const typename PointCloud<T>::PointStore &pcs = pc.point_store();
+        v = pcs.col(0).minCoeff(); if (v < min(0)) min(0) = v;
+        v = pcs.col(1).minCoeff(); if (v < min(1)) min(1) = v;
+        v = pcs.col(2).minCoeff(); if (v < min(2)) min(2) = v;
+    }
+    return min;
+}
+
+template <typename T>
+const typename cis::PointCloud<T>::Point max(const std::vector<cis::PointCloud<T>> &cloud) {
+    using namespace cis;
+    typename PointCloud<T>::Point max;
+    {
+        const typename PointCloud<T>::PointStore &pcs = cloud.at(0).point_store();
+        max(0) = pcs.col(0).maxCoeff();
+        max(1) = pcs.col(1).maxCoeff();
+        max(2) = pcs.col(2).maxCoeff();
+    }
+    T v;
+    for (const PointCloud<T> &pc : cloud) {
+        const typename PointCloud<T>::PointStore &pcs = pc.point_store();
+        v = pcs.col(0).maxCoeff(); if (v < max(0)) max(0) = v;
+        v = pcs.col(1).maxCoeff(); if (v < max(1)) max(1) = v;
+        v = pcs.col(2).maxCoeff(); if (v < max(2)) max(2) = v;
+    }
+    return max;
+}

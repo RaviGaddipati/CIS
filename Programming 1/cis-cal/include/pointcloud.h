@@ -13,7 +13,6 @@
 #define CIS_CAL_POINTCLOUD_H
 
 #include "Eigen"
-#include "horn.h"
 #include <vector>
 #include <cmath>
 #include <doctest.h>
@@ -196,16 +195,6 @@ namespace cis {
             }
             return *this;
         }
-
-        /**
-         * @brief
-         * Compute the transformation from this point cloud to another pointcloud.
-         * @param other PointCloud
-         * @return Transformation
-         */
-        Eigen::Transform<T, 3, Eigen::Affine> transformation_to(const PointCloud<T> &other) const {
-            return cloud_to_cloud(*this, other);
-        };
 
         /**
          * @brief
