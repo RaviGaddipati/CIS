@@ -1,14 +1,20 @@
-//
-// Created by Doran W on 10/25/16.
-//
+/**
+ * @author Ravi Gaddipati, Doran Walsten
+ * @date October 23, 2016
+ * rgaddip1@jhu.edu
+ *
+ * @brief
+ * Computer Integrated Surgery
+ * Computes bernstein polynomial interpolations
+ * @file
+ */
 
 #ifndef CIS_CAL_BERNSTEIN_H
 #define CIS_CAL_BERNSTEIN_H
 
-//#include "pointcloud.h"
-//#include "utils.h"
 #include "Eigen"
 #include "Eigenvalues"
+#include "utils.h"
 
 namespace cis {
 
@@ -22,8 +28,8 @@ namespace cis {
      * @param u - input
      * @return Value of the basis polynomial given input u
      */
-    double bernstein(int k, int n, double u) {
-        return nChoosek(n, k) * pow(u, k) * pow(1 - u, n - k);
+    inline double bernstein(size_t k, size_t n, double u) {
+        return nChoosek(n, k) * std::pow(u, k) * std::pow(1 - u, n - k);
     }
 
     /**
@@ -33,31 +39,33 @@ namespace cis {
      * @param q_max - Defines the maximum value in each direction
      * @return The newly created point that is now bounded
      */
-    Point scaleToBox(Point q, Point q_min, Point q_max) {
+    Point scale_to_box(Point q, Point q_min, Point q_max) {
         Point u = {0, 0, 0};
         u(0) = (q(0) - q_min(0)) / (q_max(0) - q_min(0));
         u(1) = (q(1) - q_min(1)) / (q_max(1) - q_min(1));
         u(2) = (q(2) - q_min(2)) / (q_max(2) - q_min(2));
-
         return u;
     }
 
     /**
-     * Compute the interpolation polynomial using 5th degree Bernstein polynomials for the provided point u
+     * Compute the interpolation polynomial using DEGREE degree Bernstein polynomials for the provided point u
      * @param u - Input Point, must be bounded between 0 - 1 for all coordinates
-     * @return Vector representing the interpolation polynomial F_000 ... F_555
+     * @return Vector representing the interpolation polynomial F_000 ... F_DDD where D is the degree.
+     * @tparam DEGREE The degree of the interpolation polynomal
      */
-    Eigen::Matrix<double, 1, 216> computeF(const Point &u) {
-        Eigen::Matrix<double, 1, 216> F = Eigen::Matrix<double, 1, 216>::Zero(); //Initialize to 0
+    template <size_t DEGREE>
+    Eigen::Matrix<double, 1, cexp_pow(DEGREE + 1, 3)>
+    interpolation_poly(const Point &u) {
+        Eigen::Matrix<double, 1, cexp_pow(DEGREE + 1, 3)> F;
         int counter = 0;
-        for (int i = 0; i <= 5; i++) {
-            double B_i = bernstein(i, 5, u(0));
-            for (int j = 0; j <= 5; j++) {
-                double B_j = bernstein(j, 5, u(1));
-                for (int k = 0; k <= 5; k++) {
-                    double B_k = bernstein(k, 5, u(2));
+        for (size_t i = 0; i <= DEGREE; i++) {
+            double B_i = bernstein(i, DEGREE, u(0));
+            for (size_t j = 0; j <= DEGREE; j++) {
+                double B_j = bernstein(j, DEGREE, u(1));
+                for (size_t k = 0; k <= DEGREE; k++) {
+                    double B_k = bernstein(k, DEGREE, u(2));
                     F(counter) = B_i * B_j * B_k;
-                    counter++;
+                    ++counter;
                 }
             }
         }
@@ -72,7 +80,7 @@ TEST_CASE("Bernstein Test Cases") {
     cis::Point q_max = {3,8,7};
     bool norm = true;
     for(int i = 0; i < pc1.size(); i++) {
-        cis::Point u = scaleToBox(pc1.at(i),q_min,q_max);
+        cis::Point u = scale_to_box(pc1.at(i),q_min,q_max);
         norm = (u(0) >= 0 && u(0) <= 1) && (u(1) >= 0 && u(1) <= 1) && (u(2) >= 0 && u(2) <= 1);
     }
     CHECK(norm); //Ensure that the scaleToBox method is working

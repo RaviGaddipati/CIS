@@ -13,6 +13,7 @@
 #define CIS_CAL_PIVOT_CALIBRATION_H
 
 #include "horn.h"
+#include "bernstein.h"
 #include <doctest.h>
 
 namespace cis {
@@ -51,6 +52,32 @@ namespace cis {
 
         // Solve the system
         return A.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV).solve(b);
+    }
+
+
+    template<typename T>
+    Eigen::Matrix<T,6,1>
+    pivot_calibration(const std::vector<PointCloud<T>> &frames,
+                      const Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> &fn) {
+
+        const typename PointCloud<T>::Point
+                _min = min(frames),
+                _max = max(frames);
+
+        std::vector<cis::PointCloud<T>> calibrated(0);
+        // Calibrate all the points
+        Eigen::Matrix<double,3,1> cal_pt;
+        for (const auto &frame : frames) {
+            calibrated.emplace_back();
+            auto &back = calibrated.back();
+            for (size_t k = 0; k < frame.size(); ++k) {
+                cal_pt = scale_to_box(frame.at(k), _min, _max);
+                cal_pt = interpolation_poly<5>(cal_pt) * fn;
+                back.add_point(cal_pt);
+            }
+        }
+
+        return pivot_calibration(calibrated);
     }
 
      /**

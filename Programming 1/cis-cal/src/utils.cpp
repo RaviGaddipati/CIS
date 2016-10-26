@@ -64,14 +64,18 @@ std::string current_date() {
     return ss.str();
 }
 
-int nChoosek(int n, int k) {
+size_t nChoosek(size_t n, size_t k) {
+    //If outside the bounds
+    if (k > n) return 0;
+    if (k == 0 || k == n) return 1;
 
-    if (k > n || k < 0) { return 0;} //If outside the bounds
-    if (k == 0 || k == n) { return 1;}
-    if (k*2 > n){k = n - k;} //Due to symmetry of combinations
+    //Due to symmetry of combinations
+    if (k*2 > n) {
+        k = n - k;
+    }
 
     //Goal is to compute the simplified expression n(n-1)...(n-(k-1))/(1*2*...k) after removal of (n-k)! from numerator
-    int res = n;
+    size_t res = n;
     for (int i = 2; i <= k; i++) {
         res = res * (n - (i - 1));
         res = res / i;

@@ -15,7 +15,8 @@
  * @file
  */
 
-#define DOCTEST_CONFIG_IMPLEMENT // User controlled test execution
+// User controlled test execution
+#define DOCTEST_CONFIG_IMPLEMENT
 
 #include <iostream>
 #include <doctest.h>
@@ -107,20 +108,12 @@ int main(const int argc, const char *argv[]) {
 
 
     // PA 2
-    if (file_exists(ctfid_file) && file_exists(emfid_file) && file_exists(emnav_file)) {
+    if (file_exists(ctfid_file) && file_exists(emfid_file) &&  file_exists(emnav_file)) {
         // We have files for problem 2
-        Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> d_fn = cis::distortion_function(calreadings, expected);
-        cis::PointCloud<double>::Point _min = min(calreadings.em_marker_calobj()),
-                _max = max(calreadings.em_marker_calobj());
-        for (size_t k = 0; k < calreadings.em_marker_calobj().at(0).size(); ++k) {
-            const Eigen::Matrix<double,3,1> scaled = cis::scaleToBox(calreadings.em_marker_calobj().at(0).at(k), _min, _max);
-            Eigen::Matrix<double, 1, 216> F = cis::computeF(scaled);
-            Eigen::Matrix<double,3,1> p = F*d_fn;
-            print_point(std::cerr, p);
-            std::cerr << " : ";
-            print_point(std::cerr, expected.at(0).at(k));
-            std::cerr << std::endl;
-        }
+        // Create the function from the readings
+        const auto d_fn = cis::distortion_function<double, 5>(calreadings, expected);
+
+
         if (file_exists(output2_debug)) {
             error_report_2(output2_file, output2_debug);
         }

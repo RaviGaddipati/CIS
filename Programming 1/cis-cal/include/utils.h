@@ -63,7 +63,7 @@ inline bool file_exists(std::string filename) {
  * @param k - number of entries to select
  * @return The number of potential combinations
  */
-int nChoosek(int n, int k);
+size_t nChoosek(size_t n, size_t k);
 
 /**
  * @brief
@@ -89,6 +89,19 @@ const typename cis::PointCloud<T>::Point min(const std::vector<cis::PointCloud<T
  */
 template <typename T>
 const typename cis::PointCloud<T>::Point max(const std::vector<cis::PointCloud<T>> &cloud);
+
+
+/**
+ * Compile time power. Adapted from:
+ * http://stackoverflow.com/questions/27270541/is-there-no-built-in-way-to-compute-a-power-at-compile-time-in-c
+ * @param base
+ * @param exponent
+ */
+template<typename T, typename U>
+T constexpr cexp_pow(T base, U exponent) {
+    static_assert(std::is_integral<U>(), "Exponent must be integral type.");
+    return exponent == 0 ? 1 : base * cexp_pow(base, exponent - 1);
+}
 
 TEST_CASE("Min and Max points") {
     cis::PointCloud<double> pc1{{{1, -2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}, {3, 8, 7}}};
