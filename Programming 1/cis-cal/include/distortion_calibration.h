@@ -41,7 +41,8 @@ namespace cis {
      */
     template<size_t DEGREE>
     Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic>
-    distortion_function(const CalReadings &readings, const std::vector<PointCloud> &expected) {
+    distortion_function(const CalReadings &readings, const std::vector<PointCloud> &expected,
+                        const Point &scale_min, const Point &scale_max) {
         //Now, want to iterate over each frame of data, adding expected points to
         //P_mat, and computing the Bernstein polynomial representation of the measured
         const size_t num_frames = readings.em_marker_calobj().size();
@@ -62,8 +63,7 @@ namespace cis {
             const PointCloud &C_exp = expected.at(i);
             for (size_t j = 0; j < C.size(); j++) {
                 P_mat.row(counter) = C_exp.at(j);
-                u = scale_to_box(C.at(j), min(readings.em_marker_calobj()),
-                                       max(readings.em_marker_calobj()));
+                u = scale_to_box(C.at(j), scale_min, scale_max);
                 F_mat.row(counter) = interpolation_poly<DEGREE>(u);
                 ++counter;
             }

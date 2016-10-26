@@ -40,7 +40,7 @@ void printusage();
  * @param f1 File 1
  * @param f2 File 2
  */
-void error_report(const std::string &f1, const std::string &f2);
+void error_report(const std::string &f1, const std::string &f2, bool frame_error=false);
 
 /**
  * @brief
@@ -110,12 +110,14 @@ int main(const int argc, const char *argv[]) {
     // PA 2
     if (file_exists(ctfid_file) && file_exists(emfid_file) &&  file_exists(emnav_file)) {
         // Create the function from the readings
+        const cis::Point smin = min(calreadings.em_marker_calobj());
+        const cis::Point smax = max(calreadings.em_marker_calobj());
         const Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic>
-                d_fn = cis::distortion_function<5>(calreadings, expected);
+                d_fn = cis::distortion_function<5>(calreadings, expected, smin, smax);
 
         // Corrected pivot calibration
         const Eigen::Matrix<double,3,1>
-                post_calibrated = cis::pivot_calibration(empivot.em_marker_probe(), d_fn).block(3,0,3,1);
+                post_calibrated = cis::pivot_calibration(empivot.em_marker_probe(), d_fn, smin, smax).block(3,0,3,1);
 
         std::cerr << em_post << "\n\n" << post_calibrated;
 
@@ -128,7 +130,7 @@ int main(const int argc, const char *argv[]) {
 }
 
 
-void error_report(const std::string &f1, const std::string &f2) {
+void error_report(const std::string &f1, const std::string &f2, bool frame_error) {
     cis::OutputPraser a(f1);
     cis::OutputPraser b(f2);
     std::cerr << "\n\nComparing:\t" << a.name() << "\t" << b.name() << std::endl;
@@ -149,16 +151,19 @@ void error_report(const std::string &f1, const std::string &f2) {
     print_point<double>(std::cerr, a.opt_post() - b.opt_post());
     std::cerr << std::endl;
 
-    std::cerr << "\nFrame RMS error:\n";
+
+    if (frame_error) std::cerr << "\nFrame RMS error:\n";
     Eigen::Matrix<double, 3, 1> total_error = {0,0,0}, frame_err;
     for (size_t i = 0; i < a.expected().size(); ++i) {
-        std::cerr << '\t' << i << ":\t";
         frame_err = a.expected().at(i).RMS_error(b.expected().at(i));
         total_error += frame_err;
-        print_point(std::cerr, frame_err);
-        std::cerr << '\n';
+        if (frame_error) {
+            std::cerr << '\t' << i << ":\t";
+            print_point(std::cerr, frame_err);
+            std::cerr << '\n';
+        }
     }
-    std::cerr << "\nAverage RMS error:\t";
+    std::cerr << "\nAverage frame RMS error:\t";
     total_error.array() /= a.expected().size();
     print_point(std::cerr, total_error);
     std::cerr << '\n' << std::endl;

@@ -35,7 +35,8 @@ namespace cis {
 
     Eigen::Matrix<double,6,1>
     pivot_calibration(const std::vector<PointCloud> &frames,
-                      const Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> &fn);
+                      const Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> &fn,
+                      const cis::Point &scale_min, const cis::Point &scale_max);
 
      /**
      * @brief
