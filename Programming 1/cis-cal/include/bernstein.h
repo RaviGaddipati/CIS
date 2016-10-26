@@ -19,8 +19,6 @@
 namespace cis {
 
 
-    using Point = PointCloud<double>::Point;
-
     /**
      * Given degree n, step k, and input u computes the bernstein basis polynomial
      * @param k - Range 0 - n
@@ -39,8 +37,10 @@ namespace cis {
      * @param q_max - Defines the maximum value in each direction
      * @return The newly created point that is now bounded
      */
-    Point scale_to_box(Point q, Point q_min, Point q_max) {
-        Point u = {0, 0, 0};
+    Eigen::Matrix<double,3,1> scale_to_box(Eigen::Matrix<double,3,1> q,
+                                           Eigen::Matrix<double,3,1> q_min,
+                                           Eigen::Matrix<double,3,1> q_max) {
+        Eigen::Matrix<double,3,1> u = {0, 0, 0};
         u(0) = (q(0) - q_min(0)) / (q_max(0) - q_min(0));
         u(1) = (q(1) - q_min(1)) / (q_max(1) - q_min(1));
         u(2) = (q(2) - q_min(2)) / (q_max(2) - q_min(2));
@@ -55,7 +55,7 @@ namespace cis {
      */
     template <size_t DEGREE>
     Eigen::Matrix<double, 1, cexp_pow(DEGREE + 1, 3)>
-    interpolation_poly(const Point &u) {
+    interpolation_poly(const Eigen::Matrix<double,3,1> &u) {
         Eigen::Matrix<double, 1, cexp_pow(DEGREE + 1, 3)> F;
         int counter = 0;
         for (size_t i = 0; i <= DEGREE; i++) {
@@ -76,11 +76,11 @@ namespace cis {
 TEST_CASE("Bernstein Test Cases") {
     using namespace cis;
     PointCloud<double> pc1{{{1, 2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}, {3, 8, 7}}};
-    cis::Point q_min = {-1, 0, 0};
-    cis::Point q_max = {3,8,7};
+    Eigen::Matrix<double,3,1> q_min = {-1, 0, 0};
+    Eigen::Matrix<double,3,1> q_max = {3,8,7};
     bool norm = true;
     for(int i = 0; i < pc1.size(); i++) {
-        cis::Point u = scale_to_box(pc1.at(i),q_min,q_max);
+        Eigen::Matrix<double,3,1> u = scale_to_box(pc1.at(i),q_min,q_max);
         norm = (u(0) >= 0 && u(0) <= 1) && (u(1) >= 0 && u(1) <= 1) && (u(2) >= 0 && u(2) <= 1);
     }
     CHECK(norm); //Ensure that the scaleToBox method is working

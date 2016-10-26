@@ -109,9 +109,15 @@ int main(const int argc, const char *argv[]) {
 
     // PA 2
     if (file_exists(ctfid_file) && file_exists(emfid_file) &&  file_exists(emnav_file)) {
-        // We have files for problem 2
         // Create the function from the readings
-        const auto d_fn = cis::distortion_function<double, 5>(calreadings, expected);
+        const Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic>
+                d_fn = cis::distortion_function<double, 5>(calreadings, expected);
+
+        // Corrected pivot calibration
+        const Eigen::Matrix<double,3,1>
+                post_calibrated = cis::pivot_calibration(empivot.em_marker_probe(), d_fn).block(3,0,3,1);
+
+        std::cerr << em_post << "\n\n" << post_calibrated;
 
 
         if (file_exists(output2_debug)) {

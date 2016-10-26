@@ -23,8 +23,6 @@
 
 namespace cis {
 
-    using Point = PointCloud<double>::Point;
-
     /**
      * @brief
      * Computes the expected values of the points after compensating from distortion.
@@ -79,7 +77,7 @@ namespace cis {
         Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>
                 F_mat = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>::Zero(num_rows, cexp_pow(DEGREE + 1, 3));
         size_t counter = 0;
-        Point u;
+        Eigen::Matrix<T,3,1> u;
 
         for (size_t i = 0; i < num_frames; i++) {
             const PointCloud<T> &C = readings.em_marker_calobj().at(i);

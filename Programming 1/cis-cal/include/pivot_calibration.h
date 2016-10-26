@@ -66,7 +66,7 @@ namespace cis {
 
         std::vector<cis::PointCloud<T>> calibrated(0);
         // Calibrate all the points
-        Eigen::Matrix<double,3,1> cal_pt;
+        Eigen::Matrix<T,3,1> cal_pt;
         for (const auto &frame : frames) {
             calibrated.emplace_back();
             auto &back = calibrated.back();
@@ -123,7 +123,7 @@ TEST_CASE ("Pivot Calibration") {
     const size_t num_frames = 10;
 
     // Vector to the post in space
-    const Eigen::Matrix<double, 3, 1> post = {1, 1, 1};//Eigen::Matrix<double, 3, 1>::Random();
+    const Eigen::Matrix<double,3,1> post = {1, 1, 1};//Eigen::Matrix<double, 3, 1>::Random();
 
     // Random set of points, centered on origin.
     PointCloud<double> probe_cloud{{{0, 1, 2},
@@ -131,7 +131,7 @@ TEST_CASE ("Pivot Calibration") {
                                            {3, 2, 1}}};
 
     //The "tip" is the vector from the centroid of the point cloud to the post
-    const Eigen::Matrix<double, 3, 1> t = post - probe_cloud.centroid();
+    const Eigen::Matrix<double,3,1> t = post - probe_cloud.centroid();
 
     std::vector<PointCloud<double>> frames;
 
