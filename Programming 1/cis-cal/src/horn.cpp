@@ -1,6 +1,13 @@
-//
-// Created by gaddra on 10/26/16.
-//
+/**
+ * @author Ravi Gaddipati, Doran Walsten
+ * @date October 23, 2016
+ * rgaddip1@jhu.edu
+ *
+ * @brief
+ * Computes a rigid body to rigid body transformation
+ *
+ * @file
+ */
 
 #include "horn.h"
 

@@ -72,11 +72,11 @@ int main(const int argc, const char *argv[]) {
                 empivot_file = fileroot + "-empivot.txt",
                 optpivot_file = fileroot + "-optpivot.txt",
                 ctfid_file = fileroot + "-ct-fiducials.txt",
-                emfid_file = fileroot + "-em-fiducialss.txt",
+                emfid_file = fileroot + "-em-fiducials.txt",
                 emnav_file = fileroot + "-EM-nav.txt",
                 output1_debug = fileroot + "-output1.txt",
                 output2_debug = fileroot + "-output2.txt",
-                output1_file = "OUTPUT/" + filename + "-output-1.txt",
+                output1_file = "OUTPUT/" + filename + "-output1.txt",
                 output2_file = "OUTPUT/" + filename + "-output2.txt";
 
 

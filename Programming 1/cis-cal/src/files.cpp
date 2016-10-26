@@ -1,7 +1,13 @@
-//
-// Created by gaddra on 10/26/16.
-//
-
+/**
+ * @author Ravi Gaddipati, Doran Walsten
+ * @date October 23, 2016
+ * rgaddip1@jhu.edu
+ *
+ * @brief
+ * File parser implementations.
+ *
+ * @file
+ */
 #include "files.h"
 
 void cis::File::_parse_coordinates(std::istream &in, size_t n, cis::PointCloud &target) {

@@ -1,6 +1,13 @@
-//
-// Created by gaddra on 10/26/16.
-//
+/**
+ * @author Ravi Gaddipati, Doran Walsten
+ * @date October 23, 2016
+ * rgaddip1@jhu.edu
+ *
+ * @brief
+ * Find the location of a post given frames of data during calibration.
+ *
+ * @file
+ */
 
 #include "pivot_calibration.h"
 

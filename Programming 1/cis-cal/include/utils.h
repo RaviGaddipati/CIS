@@ -81,12 +81,12 @@ std::ostream &print_point(std::ostream &os, const Eigen::Matrix<T, 3, 1> &p) {
 /**
  * @return Min coeffs of all frames.
  */
-const typename cis::Point min(const std::vector<cis::PointCloud> &cloud);
+const cis::Point min(const std::vector<cis::PointCloud> &cloud);
 
 /**
  * @return Max coeffs of all frames.
  */
-const typename cis::Point max(const std::vector<cis::PointCloud> &cloud);
+const cis::Point max(const std::vector<cis::PointCloud> &cloud);
 
 
 /**
@@ -111,6 +111,14 @@ TEST_CASE("Min and Max points") {
     CHECK(_min == p);
     p = {3,8,7};
     CHECK(_max == p);
+}
+
+TEST_CASE("constexpr power") {
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < 6; ++j) {
+            CHECK(cexp_pow(i, j) == std::pow(i, j));
+        }
+    }
 }
 
 #endif //CIS_CAL_UTILS_H
