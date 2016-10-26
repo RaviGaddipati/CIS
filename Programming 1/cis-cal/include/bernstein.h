@@ -37,15 +37,9 @@ namespace cis {
      * @param q_max - Defines the maximum value in each direction
      * @return The newly created point that is now bounded
      */
-    Eigen::Matrix<double,3,1> scale_to_box(Eigen::Matrix<double,3,1> q,
-                                           Eigen::Matrix<double,3,1> q_min,
-                                           Eigen::Matrix<double,3,1> q_max) {
-        Eigen::Matrix<double,3,1> u = {0, 0, 0};
-        u(0) = (q(0) - q_min(0)) / (q_max(0) - q_min(0));
-        u(1) = (q(1) - q_min(1)) / (q_max(1) - q_min(1));
-        u(2) = (q(2) - q_min(2)) / (q_max(2) - q_min(2));
-        return u;
-    }
+    Point scale_to_box(Point q,
+                       Point q_min,
+                       Point q_max);
 
     /**
      * Compute the interpolation polynomial using DEGREE degree Bernstein polynomials for the provided point u
@@ -55,7 +49,7 @@ namespace cis {
      */
     template <size_t DEGREE>
     Eigen::Matrix<double, 1, cexp_pow(DEGREE + 1, 3)>
-    interpolation_poly(const Eigen::Matrix<double,3,1> &u) {
+    interpolation_poly(const Point &u) {
         Eigen::Matrix<double, 1, cexp_pow(DEGREE + 1, 3)> F;
         int counter = 0;
         for (size_t i = 0; i <= DEGREE; i++) {
@@ -75,33 +69,33 @@ namespace cis {
 
 TEST_CASE("Bernstein Test Cases") {
     using namespace cis;
-    PointCloud<double> pc1{{{1, 2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}, {3, 8, 7}}};
-    Eigen::Matrix<double,3,1> q_min = {-1, 0, 0};
-    Eigen::Matrix<double,3,1> q_max = {3,8,7};
+    PointCloud pc1{{{1, 2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}, {3, 8, 7}}};
+    Point q_min = {-1, 0, 0};
+    Point q_max = {3,8,7};
     bool norm = true;
     for(int i = 0; i < pc1.size(); i++) {
-        Eigen::Matrix<double,3,1> u = scale_to_box(pc1.at(i),q_min,q_max);
+        Point u = scale_to_box(pc1.at(i),q_min,q_max);
         norm = (u(0) >= 0 && u(0) <= 1) && (u(1) >= 0 && u(1) <= 1) && (u(2) >= 0 && u(2) <= 1);
     }
-    CHECK(norm); //Ensure that the scaleToBox method is working
+            CHECK(norm); //Ensure that the scaleToBox method is working
 
     //Check that nChoosek is working
-    CHECK(nChoosek(5,-1) == 0);
-    CHECK(nChoosek(5,0) == 1);
-    CHECK(nChoosek(5,1) == 5);
-    CHECK(nChoosek(5,2) == 10);
-    CHECK(nChoosek(5,3) == 10);
-    CHECK(nChoosek(5,4) == 5);
-    CHECK(nChoosek(5,5) == 1);
-    CHECK(nChoosek(5,6) == 0);
+            CHECK(nChoosek(5,-1) == 0);
+            CHECK(nChoosek(5,0) == 1);
+            CHECK(nChoosek(5,1) == 5);
+            CHECK(nChoosek(5,2) == 10);
+            CHECK(nChoosek(5,3) == 10);
+            CHECK(nChoosek(5,4) == 5);
+            CHECK(nChoosek(5,5) == 1);
+            CHECK(nChoosek(5,6) == 0);
 
     //Check that Bernstein base polynomial is working
     double x = 0.5;
     //Checks inspired by rules on Wikipedia for Bernstein polynomial expansion: https://en.wikipedia.org/wiki/Bernstein_polynomial
-    CHECK(bernstein(0,0,x) == 1);
-    CHECK(bernstein(1,2,x) == 2*x*(1-x));
-    CHECK(bernstein(0,4,x) == pow(1-x,4));
-    CHECK(bernstein(2,3,x) == 3*pow(x,2)*(1-x));
+            CHECK(bernstein(0,0,x) == 1);
+            CHECK(bernstein(1,2,x) == 2*x*(1-x));
+            CHECK(bernstein(0,4,x) == pow(1-x,4));
+            CHECK(bernstein(2,3,x) == 3*pow(x,2)*(1-x));
 }
 
 

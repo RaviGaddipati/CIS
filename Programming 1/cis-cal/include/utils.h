@@ -81,14 +81,12 @@ std::ostream &print_point(std::ostream &os, const Eigen::Matrix<T, 3, 1> &p) {
 /**
  * @return Min coeffs of all frames.
  */
-template <typename T>
-const typename cis::PointCloud<T>::Point min(const std::vector<cis::PointCloud<T>> &cloud);
+const typename cis::Point min(const std::vector<cis::PointCloud> &cloud);
 
 /**
  * @return Max coeffs of all frames.
  */
-template <typename T>
-const typename cis::PointCloud<T>::Point max(const std::vector<cis::PointCloud<T>> &cloud);
+const typename cis::Point max(const std::vector<cis::PointCloud> &cloud);
 
 
 /**
@@ -104,12 +102,12 @@ T constexpr cexp_pow(T base, U exponent) {
 }
 
 TEST_CASE("Min and Max points") {
-    cis::PointCloud<double> pc1{{{1, -2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}, {3, 8, 7}}};
-    cis::PointCloud<double> pc2{{{0, 2, 3}, {0, 1, .5}, {0, 0, 1}, {-100, 0, 0}, {3, 8, 7}}};
-    std::vector<cis::PointCloud<double>> frames = {pc1, pc2};
+    cis::PointCloud pc1{{{1, -2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}, {3, 8, 7}}};
+    cis::PointCloud pc2{{{0, 2, 3}, {0, 1, .5}, {0, 0, 1}, {-100, 0, 0}, {3, 8, 7}}};
+    std::vector<cis::PointCloud> frames = {pc1, pc2};
     const auto _min = min(frames);
     const auto _max = max(frames);
-    typename cis::PointCloud<double>::Point p{-100,-2,0};
+    cis::Point p{-100,-2,0};
     CHECK(_min == p);
     p = {3,8,7};
     CHECK(_max == p);

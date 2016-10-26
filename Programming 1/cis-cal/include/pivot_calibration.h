@@ -29,56 +29,13 @@ namespace cis {
      * @param frames
      * @return x vector: {t, post}
      */
-    template<typename T>
-    Eigen::Matrix<T, 6, 1>
-    pivot_calibration(const std::vector<PointCloud<T>> &frames) {
-        // The first frame is moved to the origin
-        const auto reference_frame = frames.at(0).center();
-
-        // {{R_0,-I},...,{R_N,-I}}
-        Eigen::Matrix<T, Eigen::Dynamic, 6> A;
-        A.resize(3 * frames.size(), Eigen::NoChange);
-        Eigen::Matrix<T, Eigen::Dynamic, 1> b;
-        b.resize(3 * frames.size(), Eigen::NoChange);
-        const Eigen::Matrix<T, 3, 3> neg_ident = -Eigen::Matrix<T, 3, 3>::Identity();
-
-        // Compute the transformation and build A, b matricies
-        for (size_t i = 0; i < frames.size(); ++i) {
-            const auto trans = cloud_to_cloud(reference_frame, frames.at(i));
-            A.block(3 * i, 0, 3, 3) = trans.rotation().matrix();
-            A.block(3 * i, 3, 3, 3) = neg_ident;
-            b.block(3 * i, 0, 3, 1) = -trans.translation().matrix(); //Needs to be the negative translation
-        }
-
-        // Solve the system
-        return A.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV).solve(b);
-    }
+    Eigen::Matrix<double, 6, 1>
+    pivot_calibration(const std::vector<PointCloud> &frames);
 
 
-    template<typename T>
-    Eigen::Matrix<T,6,1>
-    pivot_calibration(const std::vector<PointCloud<T>> &frames,
-                      const Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> &fn) {
-
-        const typename PointCloud<T>::Point
-                _min = min(frames),
-                _max = max(frames);
-
-        std::vector<cis::PointCloud<T>> calibrated(0);
-        // Calibrate all the points
-        Eigen::Matrix<T,3,1> cal_pt;
-        for (const auto &frame : frames) {
-            calibrated.emplace_back();
-            auto &back = calibrated.back();
-            for (size_t k = 0; k < frame.size(); ++k) {
-                cal_pt = scale_to_box(frame.at(k), _min, _max);
-                cal_pt = interpolation_poly<5>(cal_pt) * fn;
-                back.add_point(cal_pt);
-            }
-        }
-
-        return pivot_calibration(calibrated);
-    }
+    Eigen::Matrix<double,6,1>
+    pivot_calibration(const std::vector<PointCloud> &frames,
+                      const Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> &fn);
 
      /**
      * @brief
@@ -94,27 +51,8 @@ namespace cis {
      * @param em EM tracker frames
      * @return x vector: {t, post}
      */
-    template<typename T>
-    Eigen::Matrix<T, 6, 1>
-    pivot_calibration_opt(const std::vector<PointCloud<T>> &opt, const std::vector<PointCloud<T>> &em) {
-         if (opt.size() != em.size()) throw std::invalid_argument("Both vectors must be the same size.");
-        // The first frame is moved to the origin
-        const PointCloud<T> em_reference_frame = em.at(0).center();
-         std::vector<PointCloud<T>> trans_opt(opt.size());
-         Eigen::Matrix<T, 4, 4> transmat;
-         for (int j = 0; j < opt.size(); ++j) {
-             const auto trans = cloud_to_cloud(em_reference_frame, em.at(j));
-             transmat.block(0,0,3,3) = trans.rotation().matrix().inverse();
-             transmat.block(0,3,3,1) = -trans.rotation().matrix().inverse() * trans.translation();
-             transmat.block(3,0,1,4) = Eigen::Matrix<double,1,4>{0,0,0,1};
-             PointCloud<T> n;
-             for (int i = 0; i < opt.at(j).size(); ++i) {
-                 n.add_point((transmat * opt.at(j).at(i).homogeneous()).block(0,0,3,1));
-             }
-             trans_opt[j] = n;
-         }
-         return pivot_calibration(trans_opt);
-    }
+    Eigen::Matrix<double, 6, 1>
+    pivot_calibration_opt(const std::vector<PointCloud> &opt, const std::vector<PointCloud> &em);
 }
 
 TEST_CASE ("Pivot Calibration") {
@@ -123,17 +61,17 @@ TEST_CASE ("Pivot Calibration") {
     const size_t num_frames = 10;
 
     // Vector to the post in space
-    const Eigen::Matrix<double,3,1> post = {1, 1, 1};//Eigen::Matrix<double, 3, 1>::Random();
+    const Point post = {1, 1, 1};//Eigen::Matrix<double, 3, 1>::Random();
 
     // Random set of points, centered on origin.
-    PointCloud<double> probe_cloud{{{0, 1, 2},
+    PointCloud probe_cloud{{{0, 1, 2},
                                            {2, 3, 4},
                                            {3, 2, 1}}};
 
     //The "tip" is the vector from the centroid of the point cloud to the post
-    const Eigen::Matrix<double,3,1> t = post - probe_cloud.centroid();
+    const Point t = post - probe_cloud.centroid();
 
-    std::vector<PointCloud<double>> frames;
+    std::vector<PointCloud> frames;
 
     // Create frames by rotating around the post
     for (size_t i = 0; i < num_frames; ++i) {

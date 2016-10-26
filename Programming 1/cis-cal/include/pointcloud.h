@@ -22,10 +22,11 @@
  * Represents a 3D point cloud.
  */
 namespace cis {
-    template<typename T=double> class PointCloud {
+    typedef Eigen::Matrix<double, 3, 1> Point;
+    typedef Eigen::Array<double, Eigen::Dynamic, 3> PointStore;
+    
+    class PointCloud {
     public:
-        typedef Eigen::Matrix<T, 3, 1> Point;
-        typedef Eigen::Array<T, Eigen::Dynamic, 3> PointStore;
 
         PointCloud() {}
 
@@ -102,7 +103,7 @@ namespace cis {
          * @param p Point to add
          * @return *this
          */
-        PointCloud<T> &operator+=(Point p) {
+        PointCloud &operator+=(Point p) {
             _cloud_matrix.col(0) += p(0);
             _cloud_matrix.col(1) += p(1);
             _cloud_matrix.col(2) += p(2);
@@ -115,7 +116,7 @@ namespace cis {
          * @param p Point to subtract
          * @return *this
          */
-        PointCloud<T> &operator-=(Point p) {
+        PointCloud &operator-=(Point p) {
             _cloud_matrix.col(0) -= p(0);
             _cloud_matrix.col(1) -= p(1);
             _cloud_matrix.col(2) -= p(2);
@@ -128,8 +129,8 @@ namespace cis {
          * @param p Point to add
          * @return *this
          */
-        PointCloud<T> operator+(const Point &p) const {
-            PointCloud<T> ret(*this);
+        PointCloud operator+(const Point &p) const {
+            PointCloud ret(*this);
             ret._cloud_matrix.col(0) += p(0);
             ret._cloud_matrix.col(1) += p(1);
             ret._cloud_matrix.col(2) += p(2);
@@ -142,8 +143,8 @@ namespace cis {
          * @param p Point to subtract
          * @return *this
          */
-        PointCloud<T> operator-(const Point &p) const {
-            PointCloud<T> ret(*this);
+        PointCloud operator-(const Point &p) const {
+            PointCloud ret(*this);
             ret._cloud_matrix.col(0) -= p(0);
             ret._cloud_matrix.col(1) -= p(1);
             ret._cloud_matrix.col(2) -= p(2);
@@ -154,8 +155,8 @@ namespace cis {
          * @brief
          * Apply a transformaion to each point
          */
-        PointCloud<T> transform(const Eigen::Transform<double, 3, Eigen::Affine> &trans) const {
-            PointCloud<T> ret(*this);
+        PointCloud transform(const Eigen::Transform<double, 3, Eigen::Affine> &trans) const {
+            PointCloud ret(*this);
             for (size_t i = 0; i < ret._cloud_matrix.rows(); ++i) {
                 ret._cloud_matrix.row(i) = trans * ret.at(i);
             }
@@ -166,8 +167,8 @@ namespace cis {
          * @brief
          * Apply a transformaion to each point (as a vector)
          */
-        PointCloud<T> transform_linear(const Eigen::Transform<double, 3, Eigen::Affine> &trans) const {
-            PointCloud<T> ret(*this);
+        PointCloud transform_linear(const Eigen::Transform<double, 3, Eigen::Affine> &trans) const {
+            PointCloud ret(*this);
             for (size_t i = 0; i < ret._cloud_matrix.rows(); ++i) {
                 ret._cloud_matrix.row(i) = trans.linear() * ret.at(i);
             }
@@ -178,7 +179,7 @@ namespace cis {
          * @brief
          * Apply a transformaion to each point, modifies this.
          */
-        PointCloud<T> &transform_self(const Eigen::Transform<double, 3, Eigen::Affine> &trans) {
+        PointCloud &transform_self(const Eigen::Transform<double, 3, Eigen::Affine> &trans) {
             for (size_t i = 0; i < _cloud_matrix.rows(); ++i) {
                 _cloud_matrix.row(i) = trans * at(i);
             }
@@ -189,7 +190,7 @@ namespace cis {
          * @brief
          * Apply a transformaion to each point (as a vector), modifies this.
          */
-        PointCloud<T> &transform_linear_self(const Eigen::Transform<double, 3, Eigen::Affine> &trans) {
+        PointCloud &transform_linear_self(const Eigen::Transform<double, 3, Eigen::Affine> &trans) {
             for (size_t i = 0; i < _cloud_matrix.rows(); ++i) {
                 _cloud_matrix.row(i) = trans.linear() * at(i);
             }
@@ -202,8 +203,8 @@ namespace cis {
          * pc -= this->centroid()
          * @return Centered PointCloud
          */
-        PointCloud<T> center() const {
-            PointCloud<T> ret(*this);
+        PointCloud center() const {
+            PointCloud ret(*this);
             ret -= centroid();
             return ret;
         }
@@ -214,7 +215,7 @@ namespace cis {
          * *this -= this->centroid()
          * @return *this
          */
-        PointCloud<T> &center_self() {
+        PointCloud &center_self() {
             *this -= centroid();
             return *this;
         }
@@ -237,23 +238,11 @@ namespace cis {
 
         /**
          * @brief
-         * Combine two point clouds into a single point cloud.
-         * @param pc
-         * @return PointCloud with all points of both sets.
-         */
-        PointCloud<T> operator+(const PointCloud<T> &pc) const {
-            PointCloud<T> ret(*this);
-            ret.add_points(pc.point_store());
-            return ret;
-        }
-
-        /**
-         * @brief
          * Returns the RMS error between the two clouds.
          * @param pc
          * @return Point with error of each coord
          */
-        Eigen::Matrix<double,3,1> RMS_error(const PointCloud<T> &pc) const {
+        Point RMS_error(const PointCloud &pc) const {
             if (size() != pc.size()) throw std::invalid_argument("Point clouds should be the same size.");
             const auto s = size();
             double sx = 0,sy = 0,sz = 0;
@@ -262,7 +251,7 @@ namespace cis {
                 sy += (pc.at(i)(1) - at(i)(1)) * (pc.at(i)(1) - at(i)(1));
                 sz += (pc.at(i)(2) - at(i)(2)) * (pc.at(i)(2) - at(i)(2));
             }
-            return Eigen::Matrix<double,3,1>(sqrt(sx/s), sqrt(sy/s), sqrt(sz/s));
+            return Point(sqrt(sx/s), sqrt(sy/s), sqrt(sz/s));
         }
 
     private:
@@ -275,8 +264,7 @@ namespace cis {
  * @param pc Prints the pointstore of the point cloud
  * @return stream
  */
-template <typename T>
-std::ostream &operator<<(std::ostream &os, const cis::PointCloud<T> &pc) {
+inline std::ostream &operator<<(std::ostream &os, const cis::PointCloud &pc) {
     os << pc.point_store();
     return os;
 }
@@ -284,11 +272,11 @@ std::ostream &operator<<(std::ostream &os, const cis::PointCloud<T> &pc) {
 
 TEST_CASE ("Point Cloud") {
     using namespace cis;
-    std::vector<PointCloud<double>::Point> points = {{1,1,2}, {2,4,1}, {3,6,3}, {2,1,6}};
-    PointCloud<double> pc(points);
+    std::vector<Point> points = {{1,1,2}, {2,4,1}, {3,6,3}, {2,1,6}};
+    PointCloud pc(points);
 
             SUBCASE("Add points") {
-        PointCloud<double>::Point p;
+        Point p;
 
         p = {1,1,2};
                 CHECK(pc.at(0) == p);
@@ -308,13 +296,13 @@ TEST_CASE ("Point Cloud") {
 
     SUBCASE("Centroid") {
         auto cent = pc.centroid();
-        PointCloud<double>::Point p{2, 3, 3};
+        Point p{2, 3, 3};
         CHECK(cent == p);
     }
 
     SUBCASE("Center") {
         auto c = pc.center();
-        PointCloud<double>::Point p;
+        Point p;
 
         p = {-1,-2,-1};
                 CHECK(c.at(0) == p);
@@ -328,8 +316,8 @@ TEST_CASE ("Point Cloud") {
     }
 
     SUBCASE("RMS") {
-        PointCloud<double> pc2(points);
-        PointCloud<double>::Point p{0,0,0};
+        PointCloud pc2(points);
+        Point p{0,0,0};
         CHECK(pc.RMS_error(pc2).isApprox(p));
     }
 }

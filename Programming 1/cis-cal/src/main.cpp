@@ -81,16 +81,16 @@ int main(const int argc, const char *argv[]) {
 
 
     // Open all the files.
-    cis::CalBody<double> calbody(calbody_file);
-    cis::CalReadings<double> calreadings(calreadings_file);
-    cis::EMPivot<double> empivot(empivot_file);
-    cis::OptPivot<double> optpivot(optpivot_file);
+    cis::CalBody calbody(calbody_file);
+    cis::CalReadings calreadings(calreadings_file);
+    cis::EMPivot empivot(empivot_file);
+    cis::OptPivot optpivot(optpivot_file);
 
     const Eigen::Matrix<double, 3, 1> em_post = cis::pivot_calibration(empivot.em_marker_probe()).block(3,0,3,1);
     const Eigen::Matrix<double, 3, 1> opt_post = cis::pivot_calibration_opt(optpivot.opt_marker_probe(),
                                                                             optpivot.opt_marker_embase()).block(3,0,3,1);
 
-    std::vector<cis::PointCloud<double>> expected = cis::distortion_calibration(calbody, calreadings);
+    std::vector<cis::PointCloud> expected = cis::distortion_calibration(calbody, calreadings);
 
     // Write output file, generate error report if there's a debug file.
 
@@ -111,7 +111,7 @@ int main(const int argc, const char *argv[]) {
     if (file_exists(ctfid_file) && file_exists(emfid_file) &&  file_exists(emnav_file)) {
         // Create the function from the readings
         const Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic>
-                d_fn = cis::distortion_function<double, 5>(calreadings, expected);
+                d_fn = cis::distortion_function<5>(calreadings, expected);
 
         // Corrected pivot calibration
         const Eigen::Matrix<double,3,1>
@@ -129,8 +129,8 @@ int main(const int argc, const char *argv[]) {
 
 
 void error_report(const std::string &f1, const std::string &f2) {
-    cis::OutputPraser<double> a(f1);
-    cis::OutputPraser<double> b(f2);
+    cis::OutputPraser a(f1);
+    cis::OutputPraser b(f2);
     std::cerr << "\n\nComparing:\t" << a.name() << "\t" << b.name() << std::endl;
 
     std::cerr << "EM Post:\t";
@@ -165,7 +165,7 @@ void error_report(const std::string &f1, const std::string &f2) {
 }
 
 void error_report_2(const std::string &f1, const std::string &f2) {
-    cis::OutputParser2<double> a(f1), b(f2);
+    cis::OutputParser2 a(f1), b(f2);
     assert(a.probe_tip().size() == b.probe_tip().size());
     std::cerr << "\n\nComparing:\t" << a.name() << "\t" << b.name() << std::endl;
     Eigen::Matrix<double, 3, 1> total{0,0,0};
