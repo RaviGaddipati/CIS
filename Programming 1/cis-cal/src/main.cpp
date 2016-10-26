@@ -87,9 +87,11 @@ int main(const int argc, const char *argv[]) {
     const Eigen::Matrix<double, 3, 1> em_post = cis::pivot_calibration(empivot.em_marker_probe()).block(3,0,3,1);
     const Eigen::Matrix<double, 3, 1> opt_post = cis::pivot_calibration_opt(optpivot.opt_marker_probe(),
                                                                             optpivot.opt_marker_embase()).block(3,0,3,1);
+
     std::vector<cis::PointCloud<double>> expected = cis::distortion_calibration(calbody, calreadings);
 
     // Write output file, generate error report if there's a debug file.
+
     try {
         cis::output_writer(output1_file, expected, em_post, opt_post);
     } catch (std::exception &e) {
@@ -101,6 +103,7 @@ int main(const int argc, const char *argv[]) {
     if (file_exists(output1_debug)) {
         error_report(output1_file, output1_debug);
     }
+
 
     // PA 2
     if (file_exists(ctfid_file) && file_exists(emfid_file) && file_exists(emnav_file)) {
