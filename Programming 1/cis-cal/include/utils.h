@@ -1,7 +1,13 @@
-//
-// Created by gaddra on 10/12/16.
-//
-
+/**
+ * @author Ravi Gaddipati, Doran Walsten
+ * @date October 23, 2016
+ * rgaddip1@jhu.edu
+ *
+ * @brief
+ * Computer Integrated Surgery
+ * Various utility functions I carry from project to project, plus some.
+ * @file
+ */
 #ifndef CIS_CAL_UTILS_H
 #define CIS_CAL_UTILS_H
 
@@ -114,8 +120,8 @@ TEST_CASE("Min and Max points") {
 }
 
 TEST_CASE("constexpr power") {
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j < 6; ++j) {
+    for (int i = 0; i < 7; ++i) {
+        for (int j = 0; j < 7; ++j) {
             CHECK(cexp_pow(i, j) == std::pow(i, j));
         }
     }

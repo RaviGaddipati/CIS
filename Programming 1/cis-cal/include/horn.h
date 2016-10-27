@@ -18,17 +18,25 @@
 
 namespace cis {
 
-/**
- * @brief
- * Given two Point clouds, compute the transformation from cloud1 to cloud2 using
- * Horn's method.
- * @param cloud1 PointCloud 1
- * @param cloud2 PointCloud 2
- * @return Eigen::Transform from cloud1 to cloud2, including rotational and translational component
- */
+    /**
+     * @brief
+     * Given two Point clouds, compute the transformation from cloud1 to cloud2 using
+     * Horn's method.
+     * @param cloud1 PointCloud 1
+     * @param cloud2 PointCloud 2
+     * @return Eigen::Transform from cloud1 to cloud2, including rotational and translational component
+     */
     Eigen::Transform<double, 3, Eigen::Affine>
     cloud_to_cloud(const PointCloud &cloud1, const PointCloud &cloud2);
 
+    /**
+     * @brief
+     * Given two Point clouds, compute the transformation from cloud1 to cloud2 using
+     * Arun's method.
+     * @param cloud1 PointCloud 1
+     * @param cloud2 PointCloud 2
+     * @return Eigen::Transform from cloud1 to cloud2, including rotational and translational component
+     */
     Eigen::Transform<double, 3, Eigen::Affine>
     cloud_to_cloud_arun(const PointCloud &cloud1, const PointCloud &cloud2);
 }

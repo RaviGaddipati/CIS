@@ -90,7 +90,7 @@ int main(const int argc, const char *argv[]) {
         // Create the function from the readings
         const cis::Point smin = min(calreadings.em_marker_calobj());
         const cis::Point smax = max(calreadings.em_marker_calobj());
-        const Eigen::MatrixXd d_fn = cis::distortion_function<3>(calreadings, expected, smin, smax);
+        const Eigen::MatrixXd d_fn = cis::distortion_function<5>(calreadings, expected, smin, smax);
 
         // Corrected pivot calibration
         cis::Point probe_post_calibrated, probe_t_calibrated;
@@ -164,10 +164,11 @@ void error_report_2(const std::string &f1, const std::string &f2) {
     std::cerr << "\n\nComparing:\t" << a.name() << "\t" << b.name() << std::endl;
     Eigen::Matrix<double, 3, 1> total{0,0,0};
     for (size_t i = 0; i < a.probe_tip().size(); ++i) {
-        total += a.probe_tip().at(i) - b.probe_tip().at(i);
+        const cis::Point t = (a.probe_tip().at(i) - b.probe_tip().at(i)).array().abs();
+        total += t;
     }
     total.array() /= a.probe_tip().size();
-    std::cerr << "Average Error: ";
+    std::cerr << "Average Absolute Error: ";
     print_point(std::cerr, total);
     std::cerr << '\n' << std::endl;
 }

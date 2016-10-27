@@ -40,7 +40,7 @@ cis::PointCloud cis::correct_points(const cis::PointCloud &frame, const Eigen::M
     cis::Point cal_pt;
     for (size_t k = 0; k < frame.size(); ++k) {
         cal_pt = cis::scale_to_box(frame.at(k), scale_min, scale_max);
-        cal_pt = cis::interpolation_poly<3>(cal_pt) * fn;
+        cal_pt = cis::interpolation_poly<5>(cal_pt) * fn;
         calibrated.add_point(cal_pt);
     }
     return calibrated;

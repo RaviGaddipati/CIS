@@ -254,6 +254,15 @@ namespace cis {
             return Point(sqrt(sx/s), sqrt(sy/s), sqrt(sz/s));
         }
 
+        Eigen::Matrix<double, Eigen::Dynamic, 1> norms() const {
+            Eigen::Matrix<double, Eigen::Dynamic, 1> ret;
+            ret.resize(this->size(), 1);
+            for (int i = 0; i < size(); ++i) {
+                ret(i) = at(i).norm();
+            }
+            return ret;
+        }
+
     private:
         PointStore _cloud_matrix; // Stores all the points.
     };

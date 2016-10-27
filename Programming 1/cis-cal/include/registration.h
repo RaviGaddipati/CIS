@@ -34,6 +34,17 @@ namespace cis {
                          const cis::Point &scale_min, const cis::Point &scale_max,
                          const Point &ptip);
 
+    /**
+     * @brief
+     * Given a registration, compute the CT coordiantes of an EM cloud.
+     * @param frames
+     * @param fn
+     * @param scale_min
+     * @param scale_max
+     * @param ptip
+     * @param Freg
+     * @return Transformed EM probe tips.
+     */
     PointCloud em_to_ct(const std::vector<cis::PointCloud> &frames, const Eigen::MatrixXd &fn,
                         const cis::Point &scale_min, const cis::Point &scale_max, const Point &ptip,
                         const Eigen::Transform<double, 3, Eigen::Affine> &Freg);
