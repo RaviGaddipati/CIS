@@ -1,0 +1,96 @@
+
+
+Comparing:	OUTPUT/pa2-debug-a-output1.txt	pa2-debug-a-output1.txt
+EM Post:	191.303,191.858,190.387	191.3,191.86,190.39
+	Error: 0.003,-0.002,-0.003
+Opt Post:	317.864,315.213,115.051	392.86,390.21,190.05
+	Error: -74.996,-74.997,-74.999
+
+Average frame RMS error:
+	0.00288344,0.00301792,0.00294491
+
+
+
+Comparing:	OUTPUT/pa2-debug-a-output2.txt	pa2-debug-a-output2.txt
+Average Absolute Error: 54.8172,50.4106,101.932
+
+
+
+Comparing:	OUTPUT/pa2-debug-b-output1.txt	pa2-debug-b-output1.txt
+EM Post:	196.772,196.75,209.598	196.68,196.75,209.51
+	Error: 0.092,0,0.088
+Opt Post:	315.604,333.681,128.99	390.6,408.68,203.99
+	Error: -74.996,-74.999,-75
+
+Average frame RMS error:
+	0.287052,0.288324,0.285979
+
+
+
+Comparing:	OUTPUT/pa2-debug-b-output2.txt	pa2-debug-b-output2.txt
+Average Absolute Error: 66.2724,99.2445,47.9142
+
+
+
+Comparing:	OUTPUT/pa2-debug-c-output1.txt	pa2-debug-c-output1.txt
+EM Post:	190.332,196.818,201.137	191.44,191.33,204.49
+	Error: -1.108,5.488,-3.353
+Opt Post:	321.392,332.052,127.701	396.39,407.05,202.7
+	Error: -74.998,-74.998,-74.999
+
+Average frame RMS error:
+	0.294021,0.259367,0.227235
+
+
+
+Comparing:	OUTPUT/pa2-debug-c-output2.txt	pa2-debug-c-output2.txt
+Average Absolute Error: 38.4116,34.4469,78.9621
+
+
+
+Comparing:	OUTPUT/pa2-debug-d-output1.txt	pa2-debug-d-output1.txt
+EM Post:	200.871,195.207,191.919	200.87,195.21,191.92
+	Error: 0.001,-0.003,-0.001
+Opt Post:	332.553,315.956,112.344	406.67,390.63,190.8
+	Error: -74.117,-74.674,-78.456
+
+Average frame RMS error:
+	0.00574931,0.00607154,0.00636724
+
+
+
+Comparing:	OUTPUT/pa2-debug-d-output2.txt	pa2-debug-d-output2.txt
+Average Absolute Error: 64.0218,74.8068,72.0408
+
+
+
+Comparing:	OUTPUT/pa2-debug-e-output1.txt	pa2-debug-e-output1.txt
+EM Post:	202.175,206.345,186.939	192.97,205.18,190.23
+	Error: 9.205,1.165,-3.291
+Opt Post:	314.478,323.95,136.232	392.56,396.65,209.53
+	Error: -78.082,-72.7,-73.298
+
+Average frame RMS error:
+	0.863836,1.35911,1.09893
+
+
+
+Comparing:	OUTPUT/pa2-debug-e-output2.txt	pa2-debug-e-output2.txt
+Average Absolute Error: 114.08,52.9789,72.9682
+
+
+
+Comparing:	OUTPUT/pa2-debug-f-output1.txt	pa2-debug-f-output1.txt
+EM Post:	190.223,187.753,196.368	195.56,192.73,196.7
+	Error: -5.337,-4.977,-0.332
+Opt Post:	335.236,324.681,124.972	409.49,401.64,196.84
+	Error: -74.254,-76.959,-71.868
+
+Average frame RMS error:
+	0.933725,1.09867,1.08953
+
+
+
+Comparing:	OUTPUT/pa2-debug-f-output2.txt	pa2-debug-f-output2.txt
+Average Absolute Error: 133.376,66.0061,97.7841
+
