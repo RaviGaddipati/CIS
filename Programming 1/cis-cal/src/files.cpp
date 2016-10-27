@@ -297,15 +297,15 @@ void cis::output_writer(const std::string file_name,
     output_writer(out, file_name, data, em_post, opt_post);
 }
 
-void cis::output_writer(std::ostream &os, std::string name, const std::vector<cis::Point> &frames) {
+void cis::output_writer(std::ostream &os, std::string name, const cis::PointCloud &frames) {
     os << frames.size() << ',' << name << '\n';
-    for (const auto &p : frames) {
-        print_point(os, p);
+    for (size_t i = 0; i < frames.size(); ++i) {
+        print_point(os, frames.at(i));
         os << '\n';
     }
 }
 
-void cis::ouput_writer(std::string filename, const std::vector<cis::Point> &frames) {
+void cis::output_writer(std::string filename, const cis::PointCloud &frames) {
     std::ofstream out(filename);
     if (!out.good()) throw std::invalid_argument("Error opening output file: " + filename);
     output_writer(out, filename, frames);

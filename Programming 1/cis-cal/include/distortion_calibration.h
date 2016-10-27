@@ -23,6 +23,7 @@
 
 namespace cis {
 
+
     /**
      * @brief
      * Computes the expected values of the points after compensating from distortion.
@@ -72,6 +73,30 @@ namespace cis {
         //Now we have all of the frames and can estimate the weights
         return F_mat.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV).solve(P_mat);
     }
+
+    /**
+     * @brief
+     * Applies the interpolation function to the points
+     * @param frame
+     * @param fn
+     * @param scale_min
+     * @param scale_max
+     * @return corrected points
+     */
+    cis::PointCloud correct_points(const cis::PointCloud &frame, const Eigen::MatrixXd &fn,
+                                   const cis::Point &scale_min, const cis::Point &scale_max);
+
+    /**
+     * @brief
+     * Applies the interpolation function to the points of the frames
+     * @param frame
+     * @param fn
+     * @param scale_min
+     * @param scale_max
+     * @return corrected frames
+     */
+    std::vector<cis::PointCloud> correct_frames(const std::vector<cis::PointCloud> &frames, const Eigen::MatrixXd &fn,
+                                                const cis::Point &scale_min, const cis::Point &scale_max);
 }
 
 

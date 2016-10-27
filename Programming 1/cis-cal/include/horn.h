@@ -28,6 +28,9 @@ namespace cis {
  */
     Eigen::Transform<double, 3, Eigen::Affine>
     cloud_to_cloud(const PointCloud &cloud1, const PointCloud &cloud2);
+
+    Eigen::Transform<double, 3, Eigen::Affine>
+    cloud_to_cloud_arun(const PointCloud &cloud1, const PointCloud &cloud2);
 }
 
 TEST_CASE ("Horn cloud-to-cloud") {

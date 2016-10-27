@@ -62,3 +62,31 @@ cis::cloud_to_cloud(const cis::PointCloud &cloud1, const cis::PointCloud &cloud2
     return Eigen::Transform<double, 3, Eigen::Affine>(trans * rot); // Applies rotation first
 }
 
+
+Eigen::Transform<double, 3, Eigen::Affine>
+cis::cloud_to_cloud_arun(const cis::PointCloud &cloud1, const cis::PointCloud &cloud2) {
+    const auto pc1 = cloud1.center();
+    const auto pc2 = cloud2.center();
+    Eigen::Matrix3d H = Eigen::Matrix3d::Zero(), X;
+    for (int i = 0; i < pc1.size(); ++i) {
+        H = H + pc1.at(i) * (pc2.at(i).transpose());
+    }
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::Matrix3d U = svd.matrixU();
+    Eigen::Matrix3d V = svd.matrixV();
+    X = V * (U.transpose());
+
+    const double det = X.determinant();
+    if ((int) det != 1) {
+        auto V = svd.matrixV();
+        Eigen::Vector3d v = V.block<3,1>(0,2);
+        V.block<3,1>(0,2) = v * -1;
+        X = V * U.transpose();
+    }
+
+    Eigen::Transform<double, 3, Eigen::Affine> ret;
+    ret.matrix().block<3,3>(0,0) = X;
+    ret.matrix().block<3,1>(0,3) = cloud2.centroid() - X * cloud1.centroid();
+    ret.matrix().block<1,4>(3,0) = Eigen::Matrix<double,1,4>{0,0,0,1};
+    return ret;
+}

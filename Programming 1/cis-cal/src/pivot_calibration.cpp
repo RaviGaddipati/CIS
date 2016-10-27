@@ -10,6 +10,7 @@
  */
 
 #include "pivot_calibration.h"
+#include "distortion_calibration.h"
 
 Eigen::Matrix<double, 6, 1>
 cis::pivot_calibration(const std::vector<cis::PointCloud> &frames) {
@@ -37,22 +38,9 @@ cis::pivot_calibration(const std::vector<cis::PointCloud> &frames) {
 
 Eigen::Matrix<double,6,1>
 cis::pivot_calibration(const std::vector<cis::PointCloud> &frames,
-                  const Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> &fn,
+                       const Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> &fn,
                        const Point &scale_min, const Point &scale_max) {
-
-    std::vector<cis::PointCloud> calibrated(0);
-    // Calibrate all the points
-    Point cal_pt;
-    for (const auto &frame : frames) {
-        calibrated.emplace_back();
-        auto &back = calibrated.back();
-        for (size_t k = 0; k < frame.size(); ++k) {
-            cal_pt = scale_to_box(frame.at(k), scale_min, scale_max);
-            cal_pt = interpolation_poly<5>(cal_pt) * fn;
-            back.add_point(cal_pt);
-        }
-    }
-
+    std::vector<cis::PointCloud> calibrated = cis::correct_frames(frames, fn, scale_min, scale_max);
     return pivot_calibration(calibrated);
 }
 

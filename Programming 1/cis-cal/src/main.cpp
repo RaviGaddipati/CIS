@@ -20,35 +20,12 @@
 
 #include <iostream>
 #include <doctest.h>
-#include "pointcloud.h"
-#include "horn.h"
+#include "main.h"
 #include "utils.h"
 #include "pivot_calibration.h"
 #include "files.h"
 #include "distortion_calibration.h"
-#include "bernstein.h"
-
-/**
- * CLI Usage information.
- */
-void printusage();
-
-/**
- * @brief
- * Prints the error between the post positions and the expected values
- * of two output files.
- * @param f1 File 1
- * @param f2 File 2
- */
-void error_report(const std::string &f1, const std::string &f2, bool frame_error=false);
-
-/**
- * @brief
- * Prints the error for PA 2
- * @param f1 File 1
- * @param f2 File 2
- */
-void error_report_2(const std::string &f1, const std::string &f2);
+#include "registration.h"
 
 int main(const int argc, const char *argv[]) {
     if (argc != 2) {
@@ -66,8 +43,8 @@ int main(const int argc, const char *argv[]) {
     }
 
     const std::string fileroot(argv[1]);
-    std::string filename = split(fileroot, '/').back();
-    std::string calbody_file = fileroot + "-calbody.txt",
+    const std::string filename = split(fileroot, '/').back();
+    const std::string calbody_file = fileroot + "-calbody.txt",
                 calreadings_file = fileroot + "-calreadings.txt",
                 empivot_file = fileroot + "-empivot.txt",
                 optpivot_file = fileroot + "-optpivot.txt",
@@ -86,11 +63,12 @@ int main(const int argc, const char *argv[]) {
     cis::EMPivot empivot(empivot_file);
     cis::OptPivot optpivot(optpivot_file);
 
-    const Eigen::Matrix<double, 3, 1> em_post = cis::pivot_calibration(empivot.em_marker_probe()).block(3,0,3,1);
-    const Eigen::Matrix<double, 3, 1> opt_post = cis::pivot_calibration_opt(optpivot.opt_marker_probe(),
-                                                                            optpivot.opt_marker_embase()).block(3,0,3,1);
+    const cis::Point
+            em_post = cis::pivot_calibration(empivot.em_marker_probe()).block(3,0,3,1),
+            opt_post = cis::pivot_calibration_opt(optpivot.opt_marker_probe(),
+                                                  optpivot.opt_marker_embase()).block(3,0,3,1);
 
-    std::vector<cis::PointCloud> expected = cis::distortion_calibration(calbody, calreadings);
+    const std::vector<cis::PointCloud> expected = cis::distortion_calibration(calbody, calreadings);
 
     // Write output file, generate error report if there's a debug file.
 
@@ -112,15 +90,26 @@ int main(const int argc, const char *argv[]) {
         // Create the function from the readings
         const cis::Point smin = min(calreadings.em_marker_calobj());
         const cis::Point smax = max(calreadings.em_marker_calobj());
-        const Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic>
-                d_fn = cis::distortion_function<5>(calreadings, expected, smin, smax);
+        const Eigen::MatrixXd d_fn = cis::distortion_function<3>(calreadings, expected, smin, smax);
 
         // Corrected pivot calibration
-        const Eigen::Matrix<double,3,1>
-                post_calibrated = cis::pivot_calibration(empivot.em_marker_probe(), d_fn, smin, smax).block(3,0,3,1);
+        cis::Point probe_post_calibrated, probe_t_calibrated;
+        {
+            auto cal = cis::pivot_calibration(empivot.em_marker_probe(), d_fn, smin, smax);
+            probe_post_calibrated = cal.block(3, 0, 3, 1);
+            probe_t_calibrated = cal.block(0, 0, 3, 1);
+        }
 
-        std::cerr << em_post << "\n\n" << post_calibrated;
+        cis::EMFiducials emfid(emfid_file);
+        cis::CTFiducials ctfid(ctfid_file);
+        const auto reg = cis::register_frames(emfid.EM_fiducials(),
+                                              ctfid.CT_fiducials(),
+                                              d_fn, smin, smax,
+                                              probe_t_calibrated);
+        cis::EMNav emnav(emnav_file);
+        const auto pts = cis::em_to_ct(emnav.em_markers_probe(), d_fn, smin, smax, probe_t_calibrated, reg);
 
+        cis::output_writer(output2_file, pts);
 
         if (file_exists(output2_debug)) {
             error_report_2(output2_file, output2_debug);
@@ -163,7 +152,7 @@ void error_report(const std::string &f1, const std::string &f2, bool frame_error
             std::cerr << '\n';
         }
     }
-    std::cerr << "\nAverage frame RMS error:\t";
+    std::cerr << "\nAverage frame RMS error:\n\t";
     total_error.array() /= a.expected().size();
     print_point(std::cerr, total_error);
     std::cerr << '\n' << std::endl;

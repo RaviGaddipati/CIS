@@ -32,3 +32,25 @@ std::vector<cis::PointCloud> cis::distortion_calibration(const cis::CalBody &bod
     }
     return ret;
 }
+
+
+cis::PointCloud cis::correct_points(const cis::PointCloud &frame, const Eigen::MatrixXd &fn,
+                               const cis::Point &scale_min, const cis::Point &scale_max) {
+    cis::PointCloud calibrated;
+    cis::Point cal_pt;
+    for (size_t k = 0; k < frame.size(); ++k) {
+        cal_pt = cis::scale_to_box(frame.at(k), scale_min, scale_max);
+        cal_pt = cis::interpolation_poly<3>(cal_pt) * fn;
+        calibrated.add_point(cal_pt);
+    }
+    return calibrated;
+}
+
+std::vector<cis::PointCloud> cis::correct_frames(const std::vector<cis::PointCloud> &frames, const Eigen::MatrixXd &fn,
+                                            const cis::Point &scale_min, const cis::Point &scale_max) {
+    std::vector<cis::PointCloud> corrected;
+    for (const auto &frame : frames) {
+        corrected.push_back(cis::correct_points(frame, fn, scale_min, scale_max));
+    }
+    return corrected;
+}

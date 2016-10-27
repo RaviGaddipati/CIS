@@ -397,8 +397,8 @@ namespace cis {
      * @param name filename
      * @param frames of data
      */
-    void output_writer(std::ostream &os, std::string name, const std::vector<cis::Point> &frames);
-    void ouput_writer(std::string filename, const std::vector<cis::Point> &frames);
+    void output_writer(std::ostream &os, std::string name, const cis::PointCloud &frames);
+    void output_writer(std::string filename, const cis::PointCloud &frames);
 }
 
 /*************** TEST CASES ***************/
