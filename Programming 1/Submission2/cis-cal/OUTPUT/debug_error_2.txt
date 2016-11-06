@@ -1,5 +1,3 @@
-
-
 Comparing:	OUTPUT/pa2-debug-a-output1.txt	pa2-debug-a-output1.txt
 EM Post:	191.303,191.858,190.387	191.3,191.86,190.39
 	Error: 0.003,-0.002,-0.003
@@ -12,9 +10,7 @@ Average frame RMS error:
 
 
 Comparing:	OUTPUT/pa2-debug-a-output2.txt	pa2-debug-a-output2.txt
-Average Absolute Error: 54.8172,50.4106,101.932
-
-
+Average Absolute Error: 0.00155,0.002375,0.003225
 
 Comparing:	OUTPUT/pa2-debug-b-output1.txt	pa2-debug-b-output1.txt
 EM Post:	196.772,196.75,209.598	196.68,196.75,209.51
@@ -28,9 +24,7 @@ Average frame RMS error:
 
 
 Comparing:	OUTPUT/pa2-debug-b-output2.txt	pa2-debug-b-output2.txt
-Average Absolute Error: 66.2724,99.2445,47.9142
-
-
+Average Absolute Error: 0.0738,0.02755,0.135575
 
 Comparing:	OUTPUT/pa2-debug-c-output1.txt	pa2-debug-c-output1.txt
 EM Post:	190.332,196.818,201.137	191.44,191.33,204.49
@@ -44,9 +38,7 @@ Average frame RMS error:
 
 
 Comparing:	OUTPUT/pa2-debug-c-output2.txt	pa2-debug-c-output2.txt
-Average Absolute Error: 38.4116,34.4469,78.9621
-
-
+Average Absolute Error: 0.0225,0.024,0.019725
 
 Comparing:	OUTPUT/pa2-debug-d-output1.txt	pa2-debug-d-output1.txt
 EM Post:	200.871,195.207,191.919	200.87,195.21,191.92
@@ -60,9 +52,7 @@ Average frame RMS error:
 
 
 Comparing:	OUTPUT/pa2-debug-d-output2.txt	pa2-debug-d-output2.txt
-Average Absolute Error: 64.0218,74.8068,72.0408
-
-
+Average Absolute Error: 0.002675,0.00305,0.00515
 
 Comparing:	OUTPUT/pa2-debug-e-output1.txt	pa2-debug-e-output1.txt
 EM Post:	202.175,206.345,186.939	192.97,205.18,190.23
@@ -76,9 +66,7 @@ Average frame RMS error:
 
 
 Comparing:	OUTPUT/pa2-debug-e-output2.txt	pa2-debug-e-output2.txt
-Average Absolute Error: 114.08,52.9789,72.9682
-
-
+Average Absolute Error: 0.094,0.163575,0.209325
 
 Comparing:	OUTPUT/pa2-debug-f-output1.txt	pa2-debug-f-output1.txt
 EM Post:	190.223,187.753,196.368	195.56,192.73,196.7
@@ -92,5 +80,5 @@ Average frame RMS error:
 
 
 Comparing:	OUTPUT/pa2-debug-f-output2.txt	pa2-debug-f-output2.txt
-Average Absolute Error: 133.376,66.0061,97.7841
+Average Absolute Error: 0.115625,0.0805,0.10775
 
