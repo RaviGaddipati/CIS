@@ -4,3 +4,12 @@
 [submodule "Programming 1/cis-cal/doctest"]
 	path = Programming 1/cis-cal/doctest
 	url = https://github.com/RaviGaddipati/doctest
+[submodule "Programming 2/doctest"]
+	path = Programming 2/doctest
+	url = https://github.com/RaviGaddipati/doctest
+[submodule "Programming 2/cis-icp/doctest"]
+	path = Programming 2/cis-icp/doctest
+	url = https://github.com/RaviGaddipati/doctest
+[submodule "Programming 2/cis-icp/eigen"]
+	path = Programming 2/cis-icp/eigen
+	url = https://github.com/RaviGaddipati/eigen
