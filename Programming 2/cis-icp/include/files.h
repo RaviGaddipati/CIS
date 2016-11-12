@@ -98,11 +98,28 @@ namespace cis {
 
     };
 
-    class BodySurface : public File {
+    class Surface : public File {
+        // TODO On load, compute center of bounding sphere of each triangle
     public:
         using File::open;
-        BodySurface() {}
-        BodySurface(const std::string file) {
+
+        struct BoundingSphere {
+            BoundingSphere() = default;
+            BoundingSphere(const Point &center, double radius, size_t i)
+                    : centroid(center), radius(radius), triangle(i) {}
+            Point centroid;
+            double radius;
+            size_t triangle;
+        };
+
+        struct Node {
+            Point max_dim, min_dim;
+            std::vector<size_t> included_pts;
+            std::vector<Node> children;
+        };
+
+        Surface() {}
+        Surface(const std::string file) {
             this->open(file);
         }
 
@@ -122,6 +139,19 @@ namespace cis {
 
     private:
         Eigen::Array<long, Eigen::Dynamic, 3> _tri, _neighbor;
+        std::vector<BoundingSphere> _spheres;
+        Node _root;
+
+        /**
+         * @brief
+         * Given 3 points, reorder such that the edge between v1 and v2 is the longest edge.
+         * @param v1 Vertex 1
+         * @param v2 Vertex 2
+         * @param v3 Vertex 3
+         */
+        void _reorder_longest_edge(Point &v1, Point &v2, Point &v3);
+
+        BoundingSphere _bounding_sphere(size_t triangle_idx);
     };
 }
 
@@ -165,7 +195,7 @@ TEST_CASE("Surface File") {
     }
 
             SUBCASE("File wrapper") {
-        cis::BodySurface rb(tmpfile);
+        cis::Surface rb(tmpfile);
         const cis::Point p = {-1, 0, 1};
         const Eigen::Array<long,1,3> a = {0,0,0}, b = {-2,-2,-2}, c = ((rb.neighbor_triangles().row(1)));
                 CHECK(rb.vertices().at(0) == p);

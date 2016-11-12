@@ -52,7 +52,7 @@ cis::Point cis::project_onto_triangle(const cis::Point &p,
     return project_onto_segment(p, v1, v2);
 }
 
-cis::Point cis::project_onto_surface_naive(const Point &p, const BodySurface &surface) {
+cis::Point cis::project_onto_surface_naive(const Point &p, const Surface &surface) {
     auto &vert = surface.vertices();
     auto &triangles = surface.triangles();
     Point projected, min_point;
