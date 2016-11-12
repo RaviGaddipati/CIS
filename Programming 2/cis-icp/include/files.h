@@ -160,14 +160,14 @@ TEST_CASE("Surface File") {
           << "-1 0 1\n"
           << "-2 0 2\n"
           << "2\n"
-          << "0 0 1 1 1 1\n"
-          << "0 0 2 2 2 2\n";
+          << "0 0 1 -1 -1 -1\n"
+          << "0 0 0 -2 -2 -2\n";
     }
 
             SUBCASE("File wrapper") {
         cis::BodySurface rb(tmpfile);
         const cis::Point p = {-1, 0, 1};
-        const Eigen::Array<long,1,3> a = {0,0,2}, b = {2,2,2}, c = ((rb.neighbor_triangles().row(1)));
+        const Eigen::Array<long,1,3> a = {0,0,0}, b = {-2,-2,-2}, c = ((rb.neighbor_triangles().row(1)));
                 CHECK(rb.vertices().at(0) == p);
                 CHECK(((rb.triangles().row(rb.triangles().rows() - 1).matrix()) == a.matrix()) == true);
         bool h = (c.matrix() == b.matrix());

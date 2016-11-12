@@ -58,7 +58,7 @@ cis::Point cis::project_onto_surface_naive(const Point &p, const BodySurface &su
     Point projected, min_point;
     double min_norm = std::numeric_limits<double>::max(), curr_norm;
 
-    for (size_t i = 0; i < triangles.size(); ++i) {
+    for (size_t i = 0; i < triangles.rows(); ++i) {
         const auto &idx = triangles.row(i);
         projected = project_onto_triangle(p, vert.at(idx(0)), vert.at(idx(1)), vert.at(idx(2)));
         curr_norm = (projected - p).norm();

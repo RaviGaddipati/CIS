@@ -156,4 +156,72 @@ TEST_CASE ("Triangle Projection") {
     }
 }
 
+TEST_CASE("Project To Surface") {
+    /**
+     * Test case is 3 triangles on the X, Y, and Z origin planes (2,3,5) triangles with common
+     * origin vertex.
+     * Point is moved around to make sure correct point and point on triangle is used.
+     */
+    const std::string tmpfile = "cis-icp-doctest.tmp";
+    {
+        std::ofstream o(tmpfile);
+        o << "7\n"
+          << "0 0 0\n"
+          << "2 0 0\n"
+          << "3 0 0\n"
+          << "0 2 0\n"
+          << "0 3 0\n"
+          << "0 0 2\n"
+          << "0 0 3\n"
+          << "3\n"
+          << "0 2 3 -1 -1 -1\n"
+          << "0 1 6 -1 -1 -1\n"
+          << "0 4 5 -1 -1 -1\n";
+    }
+
+    cis::BodySurface bs(tmpfile);
+            REQUIRE(bs.triangles().rows() == 3);
+            REQUIRE(bs.vertices().size() == 7);
+
+    // 1,1,1 is equidistant to all triangles
+    cis::Point p , prj, expect;
+
+    p << 1,1,0.5;
+    expect << 1,1,0;
+    prj = cis::project_onto_surface_naive(p, bs);
+            CHECK(prj == expect);
+
+    p << 0.5,1,1;
+    expect << 0,1,1;
+    prj = cis::project_onto_surface_naive(p, bs);
+            CHECK(prj == expect);
+
+    p << 1,0.5,1;
+    expect << 1,0,1;
+    prj = cis::project_onto_surface_naive(p, bs);
+            CHECK(prj == expect);
+
+    p << -1,-1,-1;
+    expect << 0,0,0;
+    prj = cis::project_onto_surface_naive(p, bs);
+            CHECK(prj == expect);
+
+    p << 4,0,0;
+    expect << 03,0,0;
+    prj = cis::project_onto_surface_naive(p, bs);
+            CHECK(prj == expect);
+
+    p << 0,4,0;
+    expect << 0,3,0;
+    prj = cis::project_onto_surface_naive(p, bs);
+            CHECK(prj == expect);
+
+    p << 0,0,4;
+    expect << 0,0,3;
+    prj = cis::project_onto_surface_naive(p, bs);
+            CHECK(prj == expect);
+
+    remove(tmpfile.c_str());
+}
+
 #endif //CIS_ICP_ICP_H

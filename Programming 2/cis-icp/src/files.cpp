@@ -61,25 +61,27 @@ void cis::BodySurface::open(std::istream &in) {
     std::getline(in, line);
     normalize_whitespace(line);
 
-    size_t n = std::stoul(line);
+    const size_t nvert = std::stoul(line);
 
     this->_clouds.resize(3);
     for (auto &c : this->_clouds) c.resize(1);
-    char delim = this->_parse_coordinates(in, n, this->_clouds[0][0], '\0');
+    char delim = this->_parse_coordinates(in, nvert, this->_clouds[0][0], '\0');
 
     // triangles and neighbors
     std::getline(in, line);
-    n = std::stoul(line);
+    const size_t ntri = std::stoul(line);
 
     std::vector<std::string> split_line;
     std::vector<Eigen::Array<long, 3, 1>> ind,neigh;
-    for (size_t i = 0; i < n; ++i) {
+    for (size_t i = 0; i < ntri; ++i) {
         if (!std::getline(in, line)) throw std::invalid_argument("Unexpected end of file.");
         normalize_whitespace(line);
         split(line, delim, split_line);
         ind.emplace_back(std::stod(split_line[0]), std::stod(split_line[1]), std::stod(split_line[2]));
-        assert(ind.back()(0) >= 0 && ind.back()(1) >= 0 && ind.back()(2) >= 0);
+        assert(ind.back()(0) >= 0 && ind.back()(1) >= 0 && ind.back()(2) >= 0); // All triangle vertex should be pos
+        assert(ind.back()(0) < nvert && ind.back()(1) < nvert && ind.back()(2) < nvert); // Make sure vertex idx is valid
         neigh.emplace_back(std::stod(split_line[3]), std::stod(split_line[4]), std::stod(split_line[5]));
+        assert(neigh.back()(0) < (long)ntri && neigh.back()(1) < (long)ntri && neigh.back()(2) < (long)ntri); // Valid triangle index
     }
 
     this->_tri.resize(ind.size(), Eigen::NoChange);
