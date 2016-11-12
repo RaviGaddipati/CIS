@@ -168,6 +168,17 @@ __INLINE__ bool between(const T val, const U a, const U b) {
     else return (val > _min) && (val < _max);
 }
 
+/**
+ * Compare two floating point numbers.
+ * @param a
+ * @param b
+ * @param EPSILON default 0.0000001
+ * @return true is equal within EPSILON
+ */
+__INLINE__
+bool approx_eq(double a, double b, double EPSILON=0.0000001) {
+    return fabs(a - b) <= EPSILON;
+}
 
 TEST_CASE("Min and Max points") {
     cis::PointCloud pc1{{{1, -2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}, {3, 8, 7}}};
@@ -211,6 +222,14 @@ TEST_CASE("Between") {
             CHECK(between(1,1,1) == true);
             CHECK(between<false>(1,1,1) == false);
             CHECK(between(2, 4, 0) == true);
+}
+
+TEST_CASE("Approx") {
+    double x = 1;
+    x += std::numeric_limits<double>::epsilon();
+    CHECK(approx_eq(1, x));
+    CHECK(approx_eq(1,1,0));
+    CHECK(approx_eq(1,1.1,.2));
 }
 
 #endif //CIS_CAL_UTILS_H

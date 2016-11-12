@@ -72,15 +72,22 @@ void cis::BodySurface::open(std::istream &in) {
     n = std::stoul(line);
 
     std::vector<std::string> split_line;
-    std::vector<Point> ind,neigh;
+    std::vector<Eigen::Array<long, 3, 1>> ind,neigh;
     for (size_t i = 0; i < n; ++i) {
         if (!std::getline(in, line)) throw std::invalid_argument("Unexpected end of file.");
         normalize_whitespace(line);
         split(line, delim, split_line);
         ind.emplace_back(std::stod(split_line[0]), std::stod(split_line[1]), std::stod(split_line[2]));
+        assert(ind.back()(0) >= 0 && ind.back()(1) >= 0 && ind.back()(2) >= 0);
         neigh.emplace_back(std::stod(split_line[3]), std::stod(split_line[4]), std::stod(split_line[5]));
     }
 
-    this->_clouds[1][0].add_points(ind);
-    this->_clouds[2][0].add_points(neigh);
+    this->_tri.resize(ind.size(), Eigen::NoChange);
+    this->_neighbor.resize(neigh.size(), Eigen::NoChange);
+
+    assert(ind.size() == neigh.size());
+    for (size_t i = 0; i < ind.size(); ++i) {
+        this->_tri.row(i) = ind[i];
+        this->_neighbor.row(i) = neigh[i];
+    }
 }

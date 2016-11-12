@@ -112,13 +112,16 @@ namespace cis {
             return this->_clouds.at(0).at(0);
         }
 
-        const PointCloud &triangles() const {
-            return this->_clouds.at(1).at(0);
+        const Eigen::Array<long, Eigen::Dynamic, 3> &triangles() const {
+            return this->_tri;
         }
 
-        const PointCloud &neighbor_triangles() const {
-            return this->_clouds.at(2).at(0);
+        const Eigen::Array<long, Eigen::Dynamic, 3> &neighbor_triangles() const {
+            return this->_neighbor;
         }
+
+    private:
+        Eigen::Array<long, Eigen::Dynamic, 3> _tri, _neighbor;
     };
 }
 
@@ -157,16 +160,18 @@ TEST_CASE("Surface File") {
           << "-1 0 1\n"
           << "-2 0 2\n"
           << "2\n"
-          << "-1 0 1 1 1 1\n"
-          << "-2 0 2 2 2 2\n";
+          << "0 0 1 1 1 1\n"
+          << "0 0 2 2 2 2\n";
     }
 
             SUBCASE("File wrapper") {
         cis::BodySurface rb(tmpfile);
-        const std::vector<cis::Point> pts = {{-1, 0, 1}, {-2, 0, 2}, {2,2,2}};
-                CHECK(rb.vertices().at(0) == pts.at(0));
-                CHECK(rb.triangles().at(rb.triangles().size() - 1) == pts.at(1));
-                CHECK(rb.neighbor_triangles().at(1) == pts.at(2));
+        const cis::Point p = {-1, 0, 1};
+        const Eigen::Array<long,1,3> a = {0,0,2}, b = {2,2,2}, c = ((rb.neighbor_triangles().row(1)));
+                CHECK(rb.vertices().at(0) == p);
+                CHECK(((rb.triangles().row(rb.triangles().rows() - 1).matrix()) == a.matrix()) == true);
+        bool h = (c.matrix() == b.matrix());
+                CHECK(h);
     }
 
     remove(tmpfile.c_str());
