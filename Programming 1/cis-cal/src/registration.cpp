@@ -6,13 +6,14 @@
 #include "distortion_calibration.h"
 
 Eigen::Transform<double, 3, Eigen::Affine>
-cis::register_frames(const std::vector<cis::PointCloud> &em_fiducuals,
+cis::register_frames(const cis::PointCloud &reference_frame,
+                const std::vector<cis::PointCloud> &em_fiducuals,
                 const cis::PointCloud &ct_fiducials,
                 const Eigen::MatrixXd &fn,
                 const cis::Point &scale_min, const cis::Point &scale_max,
                 const Point &ptip) {
     const std::vector<cis::PointCloud> calibrated = cis::correct_frames(em_fiducuals, fn, scale_min, scale_max);
-    const cis::PointCloud reference_frame = calibrated.at(0).center();
+    //const cis::PointCloud reference_frame = calibrated.at(0).center();
 
     cis::PointCloud v;
     for (const auto &frame : calibrated) {
@@ -23,11 +24,10 @@ cis::register_frames(const std::vector<cis::PointCloud> &em_fiducuals,
     return freg;
 }
 
-cis::PointCloud cis::em_to_ct(const std::vector<cis::PointCloud> &frames, const Eigen::MatrixXd &fn,
+cis::PointCloud cis::em_to_ct(const cis::PointCloud &reference_frame, const std::vector<cis::PointCloud> &frames, const Eigen::MatrixXd &fn,
                          const cis::Point &scale_min, const cis::Point &scale_max, const cis::Point &ptip,
                          const Eigen::Transform<double, 3, Eigen::Affine> &Freg) {
     const std::vector<cis::PointCloud> calibrated = cis::correct_frames(frames, fn, scale_min, scale_max);
-    const cis::PointCloud reference_frame = calibrated.at(0).center();
 
     cis::PointCloud v;
     for (const auto &frame : calibrated) {

@@ -94,20 +94,23 @@ int main(const int argc, const char *argv[]) {
 
         // Corrected pivot calibration
         cis::Point probe_post_calibrated, probe_t_calibrated;
+
         {
             auto cal = cis::pivot_calibration(empivot.em_marker_probe(), d_fn, smin, smax);
             probe_post_calibrated = cal.block(3, 0, 3, 1);
             probe_t_calibrated = cal.block(0, 0, 3, 1);
         }
+        //The reference frame necessary for future steps since pivot calibration based on this frame
+        cis::PointCloud calibrated_reference_frame = cis::correct_frames(empivot.em_marker_probe(),d_fn,smin,smax).at(0).center();
 
         cis::EMFiducials emfid(emfid_file);
         cis::CTFiducials ctfid(ctfid_file);
-        const auto reg = cis::register_frames(emfid.EM_fiducials(),
+        const auto reg = cis::register_frames(calibrated_reference_frame, emfid.EM_fiducials(),
                                               ctfid.CT_fiducials(),
                                               d_fn, smin, smax,
                                               probe_t_calibrated);
         cis::EMNav emnav(emnav_file);
-        const auto pts = cis::em_to_ct(emnav.em_markers_probe(), d_fn, smin, smax, probe_t_calibrated, reg);
+        const auto pts = cis::em_to_ct(calibrated_reference_frame, emnav.em_markers_probe(), d_fn, smin, smax, probe_t_calibrated, reg);
 
         cis::output_writer(output2_file, pts);
 

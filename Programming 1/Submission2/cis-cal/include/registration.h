@@ -28,11 +28,12 @@ namespace cis {
      * @return Freg
      */
     Eigen::Transform<double, 3, Eigen::Affine>
-    register_frames(const std::vector<cis::PointCloud> &em_fiducuals,
-                         const cis::PointCloud &ct_fiducials,
-                         const Eigen::MatrixXd &fn,
-                         const cis::Point &scale_min, const cis::Point &scale_max,
-                         const Point &ptip);
+    register_frames(const cis::PointCloud &reference_frame,
+                    const std::vector<cis::PointCloud> &em_fiducuals,
+                    const cis::PointCloud &ct_fiducials,
+                    const Eigen::MatrixXd &fn,
+                    const cis::Point &scale_min, const cis::Point &scale_max,
+                    const Point &ptip);
 
     /**
      * @brief
@@ -45,7 +46,7 @@ namespace cis {
      * @param Freg
      * @return Transformed EM probe tips.
      */
-    PointCloud em_to_ct(const std::vector<cis::PointCloud> &frames, const Eigen::MatrixXd &fn,
+    PointCloud em_to_ct(const cis::PointCloud &reference_frame, const std::vector<cis::PointCloud> &frames, const Eigen::MatrixXd &fn,
                         const cis::Point &scale_min, const cis::Point &scale_max, const Point &ptip,
                         const Eigen::Transform<double, 3, Eigen::Affine> &Freg);
 
