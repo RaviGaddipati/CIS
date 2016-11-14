@@ -62,10 +62,17 @@ void cis::Surface::build() {
     _root = Division(all, this);
 }
 
+void cis::Surface::load(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles,
+                        const Eigen::Array<long, 3, Eigen::Dynamic> &neighbors) {
+    _triangles = triangles;
+    _neighbors = neighbors;
+    build();
+}
+
 bool cis::Surface::Division::subdivide() {
     if (_left != nullptr && _right != nullptr) return true; // Already divided
 
-    int plane = _split_plane == 2 ? 0 : _split_plane + 1;
+    const int plane = _split_plane == 2 ? 0 : _split_plane + 1;
     const auto sphere_cmp = [this, plane](size_t a, size_t b)
     {
         return _surface->sphere_centroid(a)(plane) < _surface->sphere_centroid(b)(plane);
@@ -75,6 +82,7 @@ bool cis::Surface::Division::subdivide() {
     std::nth_element(_included_spheres.begin(), middle, _included_spheres.end(), sphere_cmp);
 
     std::vector<size_t> left_n(_included_spheres.begin(), middle), right_n(middle, _included_spheres.end());
+    if (left_n.size() == 0 || right_n.size() == 0) return false; // Further splits are useless
     _left = std::make_shared<Division>(left_n, _surface, plane);
     _right = std::make_shared<Division>(right_n, _surface, plane);
 

@@ -64,11 +64,7 @@ namespace cis {
         void build();
 
         void load(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles,
-                  const Eigen::Array<long, 3, Eigen::Dynamic> &neighbors) {
-            _triangles = triangles;
-            _neighbors = neighbors;
-            build();
-        }
+                  const Eigen::Array<long, 3, Eigen::Dynamic> &neighbors);
 
         Division &root() {return _root;}
 
@@ -99,7 +95,8 @@ namespace cis {
          */
         void _reorder_longest_edge(Eigen::Vector3d &v1, Eigen::Vector3d &v2, Eigen::Vector3d &v3);
 
-        Eigen::Vector3d _bounding_sphere(const Eigen::Matrix<double, 9, Eigen::Dynamic> &triangle, double *radius=nullptr);
+        Eigen::Vector3d _bounding_sphere(const Eigen::Matrix<double, 9, Eigen::Dynamic> &triangle,
+                                         double *radius=nullptr);
 
     };
 }
@@ -134,12 +131,25 @@ TEST_CASE("Surface tree") {
 
     cis::SurfaceFile f(tmpfile);
     cis::Surface s(f.cat_triangles(), f.neighbor_triangles());
+    auto &root = s.root();
 
             SUBCASE("Centroids") {
         const std::vector<Eigen::Vector3d> pts = {{1,0.5,1}, {0.5,0.5,2}, {0.5,0,1}, {0.5,0.5,0}, {0.5,1,1},{0, 0.5,1}};
-        auto &root = s.root();
         for (size_t i = 0; i < root.size(); ++i) {
                     CHECK(s.sphere_centroid(i) == pts.at(i/2));
+        }
+    }
+
+    SUBCASE("Tree") {
+        CHECK(root.left().size() + root.right().size() == 12);
+        std::cerr << "\nLeft:\n";
+        for (size_t i = 0; i < root.left().size(); ++i) {
+            std::cerr << root.left().at(i) << "\n\n";
+        }
+
+        std::cerr << "\nRight:\n";
+        for (size_t i = 0; i < root.right().size(); ++i) {
+            std::cerr << root.right().at(i) << "\n\n";
         }
     }
 
