@@ -6,8 +6,11 @@
 #define CIS_ICP_SURFACE_H
 
 #include <memory>
+#include <fstream>
+#include <iostream>
 #include "Eigen"
 #include "doctest.h"
+#include "files.h"
 
 namespace cis {
 
@@ -53,7 +56,7 @@ namespace cis {
         Surface() = default;
 
         Surface(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles,
-                const Eigen::Array<long, 3, Eigen::Dynamic> &neighbors) :
+                const Eigen::Array<long, Eigen::Dynamic, 3> &neighbors) :
                 _triangles(triangles), _neighbors(neighbors) {
             build();
         }
@@ -66,6 +69,8 @@ namespace cis {
             _neighbors = neighbors;
             build();
         }
+
+        Division &root() {return _root;}
 
         Eigen::Array<double, 9, 1> triangle(size_t i) const {
             return _triangles.col(i);
@@ -80,7 +85,7 @@ namespace cis {
         Eigen::Array<double, 3, Eigen::Dynamic> _spheres;
         // Each col is X,Y,Z of each vertex
         Eigen::Array<double, 9, Eigen::Dynamic> _triangles;
-        Eigen::Array<long, 3, Eigen::Dynamic> _neighbors;
+        Eigen::Array<long, Eigen::Dynamic, 3> _neighbors;
         Division _root;
 
 
@@ -100,7 +105,47 @@ namespace cis {
 }
 
 TEST_CASE("Surface tree") {
-;
+    const std::string tmpfile = "cis-icp-doctest.tmp";
+    {
+        std::ofstream o(tmpfile);
+        o << "8\n"
+          << "0 0 0\n"
+          << "1 1 0\n"
+          << "0 1 0\n"
+          << "0 0 2\n"
+          << "0 1 2\n"
+          << "1 1 2\n"
+          << "1 0 2\n"
+          << "1 0 0\n"
+          << "12\n"
+          << "7 5 6 -1 -1 -1\n"
+          << "7 1 5 -1 -1 -1\n"
+          << "4 3 6 -1 -1 -1\n"
+          << "4 5 6 -1 -1 -1\n"
+          << "0 3 6 -1 -1 -1\n"
+          << "7 0 6 -1 -1 -1\n"
+          << "7 0 2 -1 -1 -1\n"
+          << "7 2 1 -1 -1 -1\n"
+          << "1 2 5 -1 -1 -1\n"
+          << "5 2 4 -1 -1 -1\n"
+          << "0 2 4 -1 -1 -1\n"
+          << "0 4 3 -1 -1 -1\n";
+    }
+
+    cis::SurfaceFile f(tmpfile);
+    cis::Surface s(f.cat_triangles(), f.neighbor_triangles());
+
+            SUBCASE("Centroids") {
+        const std::vector<Eigen::Vector3d> pts = {{1,0.5,1}, {0.5,0.5,2}, {0.5,0,1}, {0.5,0.5,0}, {0.5,1,1},{0, 0.5,1}};
+        auto &root = s.root();
+        for (size_t i = 0; i < root.size(); ++i) {
+                    CHECK(s.sphere_centroid(i) == pts.at(i/2));
+        }
+    }
+
+
+
+    remove(tmpfile.c_str());
 }
 
 

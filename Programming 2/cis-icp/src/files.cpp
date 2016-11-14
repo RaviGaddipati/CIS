@@ -160,3 +160,15 @@ cis::SurfaceFile::BoundingSphere cis::SurfaceFile::_bounding_sphere(size_t trian
     ret.triangle = triangle_idx;
     return ret;
 }
+
+Eigen::Array<double, 9, Eigen::Dynamic> cis::SurfaceFile::cat_triangles() const {
+    Eigen::Array<double, 9, Eigen::Dynamic> ret;
+    long ntri = _tri.rows();
+    if (ntri == 0) throw std::invalid_argument("No triangles loaded.");
+    ret.resize(Eigen::NoChange, ntri);
+    const auto &verts = vertices();
+    for (long i = 0; i < ntri; ++i) {
+        ret.block<9,1>(0,i) << verts.at(_tri.row(i)(0)), verts.at(_tri.row(i)(1)), verts.at(_tri.row(i)(2));
+    }
+    return ret;
+}

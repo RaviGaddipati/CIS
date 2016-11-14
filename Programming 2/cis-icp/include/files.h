@@ -133,6 +133,8 @@ namespace cis {
             return this->_tri;
         }
 
+        Eigen::Array<double, 9, Eigen::Dynamic> cat_triangles() const;
+
         const Eigen::Array<long, Eigen::Dynamic, 3> &neighbor_triangles() const {
             return this->_neighbor;
         }

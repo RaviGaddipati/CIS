@@ -39,19 +39,19 @@ Eigen::Vector3d cis::Surface::_bounding_sphere(const Eigen::Matrix<double, 9, Ei
     c = triangle.block<3,1>(6,0);
 
     _reorder_longest_edge(a, b, c);
-    ret = (a + b) / 2;
+    ret = (a + b).array() / 2;
     u = a - ret;
     v = c - ret;
     d = (u.cross(v)).cross(u);
     g = (v.norm() - u.norm()) / (d * 2).dot(v - u);
 
-    if (g > 0) ret += g * d;
+    if (g > 0 && std::isfinite(g)) ret += g * d;
     if (radius != nullptr) *radius = (ret - a).norm();
     return ret;
 }
 
 void cis::Surface::build() {
-    assert(_neighbors.cols() == _triangles.cols());
+    assert(_neighbors.rows() == _triangles.cols());
 
     _spheres.resize(Eigen::NoChange, _triangles.cols());
     for(size_t i = 0; i < _spheres.cols(); ++i) {
