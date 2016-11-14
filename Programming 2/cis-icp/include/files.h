@@ -98,7 +98,7 @@ namespace cis {
 
     };
 
-    class Surface : public File {
+    class SurfaceFile : public File {
         // TODO On load, compute center of bounding sphere of each triangle
     public:
         using File::open;
@@ -118,8 +118,8 @@ namespace cis {
             std::vector<Node> children;
         };
 
-        Surface() {}
-        Surface(const std::string file) {
+        SurfaceFile() {}
+        SurfaceFile(const std::string file) {
             this->open(file);
         }
 
@@ -195,7 +195,7 @@ TEST_CASE("Surface File") {
     }
 
             SUBCASE("File wrapper") {
-        cis::Surface rb(tmpfile);
+        cis::SurfaceFile rb(tmpfile);
         const cis::Point p = {-1, 0, 1};
         const Eigen::Array<long,1,3> a = {0,0,0}, b = {-2,-2,-2}, c = ((rb.neighbor_triangles().row(1)));
                 CHECK(rb.vertices().at(0) == p);

@@ -48,7 +48,7 @@ namespace cis {
      * @param surface to project onto
      * @return Point on surface
      */
-    Point project_onto_surface_naive(const Point &p, const Surface &surface);
+    Point project_onto_surface_naive(const Point &p, const SurfaceFile &surface);
 
 }
 
@@ -179,7 +179,7 @@ TEST_CASE("Project To Surface") {
           << "0 4 5 -1 -1 -1\n";
     }
 
-    cis::Surface bs(tmpfile);
+    cis::SurfaceFile bs(tmpfile);
             REQUIRE(bs.triangles().rows() == 3);
             REQUIRE(bs.vertices().size() == 7);
 

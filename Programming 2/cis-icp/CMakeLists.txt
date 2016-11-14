@@ -18,6 +18,6 @@ set(SOURCE_FILES
         src/utils.cpp
         include/utils.h
         include/icp.h
-        src/icp.cpp)
+        src/icp.cpp src/surface.cpp include/surface.h)
 
 add_executable(cisicp ${SOURCE_FILES})

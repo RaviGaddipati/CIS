@@ -55,7 +55,7 @@ void cis::RigidBody::open(std::istream &in) {
     _tip << std::stod(line_split.at(0)), std::stod(line_split.at(1)), std::stod(line_split.at(2));
 }
 
-void cis::Surface::open(std::istream &in) {
+void cis::SurfaceFile::open(std::istream &in) {
     // Parse meta info
     std::string line;
     std::getline(in, line);
@@ -115,7 +115,7 @@ void cis::Surface::open(std::istream &in) {
 
 }
 
-void cis::Surface::_reorder_longest_edge(cis::Point &v1, cis::Point &v2, cis::Point &v3) {
+void cis::SurfaceFile::_reorder_longest_edge(cis::Point &v1, cis::Point &v2, cis::Point &v3) {
     static double e1n,e2n,e3n;
     static Point swp;
 
@@ -140,7 +140,7 @@ void cis::Surface::_reorder_longest_edge(cis::Point &v1, cis::Point &v2, cis::Po
     // Nothing to be done if v1-v2 is longest
 }
 
-cis::Surface::BoundingSphere cis::Surface::_bounding_sphere(size_t triangle_idx) {
+cis::SurfaceFile::BoundingSphere cis::SurfaceFile::_bounding_sphere(size_t triangle_idx) {
     static Point u,v,d;
     static double g;
     static BoundingSphere ret;

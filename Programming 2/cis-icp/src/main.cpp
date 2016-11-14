@@ -23,6 +23,7 @@
 #include "main.h"
 #include "files.h"
 #include "icp.h"
+#include "surface.h"
 
 int main(const int argc, const char *argv[]) {
     if (argc != 2) {
