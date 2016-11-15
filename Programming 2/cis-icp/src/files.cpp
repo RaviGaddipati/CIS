@@ -173,3 +173,35 @@ Eigen::Array<double, 9, Eigen::Dynamic> cis::SurfaceFile::cat_triangles() const 
     }
     return ret;
 }
+
+/**
+ *
+ * @param in File corresponding to the readings file of the sample frames
+ */
+void cis::SampleReadings::open(std::istream &in) {
+    // Parse meta info
+
+    std::string line;
+    std::getline(in, line);
+    line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+    auto line_split = split(line, ',');
+
+    size_t nd, ns;
+    try {
+        ns = std::stoul(line_split[1]); //Number of frames to expect
+        nd = std::stoul(line_split[0]) - this->N_a - this->N_b; //Number of dummy LEDs
+        this->_name = line_split[2];
+    } catch (std::exception &e) {
+        std::cerr << "Error parsing meta info line, expected 4 fields. \n" << line << std::endl;
+        throw;
+    }
+
+    this->_clouds.resize(3);
+    for (auto &c : this->_clouds) c.resize(ns);
+    PointCloud *temp = new PointCloud();
+    for (size_t frame = 0; frame < ns; ++frame ) {
+        this->_parse_coordinates(in, this->N_a, this->_clouds[0][frame], ',');
+        this->_parse_coordinates(in, this->N_b, this->_clouds[1][frame],',');
+        this->_parse_coordinates(in, nd, *temp, ','); //Want this stuff to be ignored in a temporary PointCloud
+    }
+}

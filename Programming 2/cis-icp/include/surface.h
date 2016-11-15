@@ -142,14 +142,14 @@ TEST_CASE("Surface tree") {
 
     SUBCASE("Tree") {
         CHECK(root.left().size() + root.right().size() == 12);
-        std::cerr << "\nLeft:\n";
+        //std::cerr << "\nLeft:\n";
         for (size_t i = 0; i < root.left().size(); ++i) {
-            std::cerr << root.left().at(i) << "\n\n";
+            //std::cerr << root.left().at(i) << "\n\n";
         }
 
-        std::cerr << "\nRight:\n";
+        //std::cerr << "\nRight:\n";
         for (size_t i = 0; i < root.right().size(); ++i) {
-            std::cerr << root.right().at(i) << "\n\n";
+            //std::cerr << root.right().at(i) << "\n\n";
         }
     }
 

@@ -139,6 +139,8 @@ namespace cis {
             return this->_neighbor;
         }
 
+
+
     private:
         Eigen::Array<long, Eigen::Dynamic, 3> _tri, _neighbor;
         std::vector<BoundingSphere> _spheres;
@@ -154,6 +156,46 @@ namespace cis {
         void _reorder_longest_edge(Point &v1, Point &v2, Point &v3);
 
         BoundingSphere _bounding_sphere(size_t triangle_idx);
+    };
+
+    class SampleReadings : public File {
+    public:
+        using File::open;
+
+        SampleReadings() {}
+
+        /**
+         * @param file Open the given file
+         */
+        SampleReadings(std::string file, size_t N_a, size_t N_b) {
+            this->N_a = N_a;
+            this->N_b = N_b;
+            open(file);
+        }
+
+        /**
+         * @param in Parse the input stream
+         */
+        void open(std::istream &in);
+
+        /**
+         * @return Frames of LED markers on the pointer
+         */
+        const std::vector<PointCloud> &pointer_rigid_body() const {
+            return this->_clouds[0];
+        }
+
+        /**
+         *
+         * @return Frams of LED markers on the fixed rigid body in the bone
+         */
+        const std::vector<PointCloud> &fixed_rigid_body() const {
+            return this->_clouds[1];
+        }
+
+    private:
+        size_t N_a;
+        size_t N_b;
     };
 }
 
@@ -208,5 +250,51 @@ TEST_CASE("Surface File") {
 
     remove(tmpfile.c_str());
 }
+
+TEST_CASE("SampleReadings File") {
+    const std::string tmpfile = "cis-icp-doctest.tmp";
+    {
+        std::ofstream o(tmpfile);
+        o << "3, 2, PA3-A-Debug-SampleReadingsTest.txt 0\n"
+          << "-81.34,   -43.04,   117.06\n"
+          << "-35.48,    -2.92,    63.39\n"
+          << "-76.64,    11.69,   109.42\n"
+          << "12.12,   -17.85,    93.44\n"
+          << "1.75,   -52.74,    46.84\n"
+          << "-28.38,    10.92,    42.26\n";
+    }
+
+    SUBCASE("File wrapper") {
+        cis::SampleReadings sr(tmpfile, 1, 1);
+        const std::vector<cis::Point> pts = {{-81.34, -43.04, 117.06},
+                                             {-35.48, -2.92,  63.39},
+                                             {-76.64, 11.69,  109.42},
+                                             {12.12,  -17.85, 93.44},
+                                             {1.75,   -52.74, 46.84},
+                                             {-28.38, 10.92,  42.26}};
+
+        CHECK( sr.pointer_rigid_body().size() == 2);
+        CHECK(sr.fixed_rigid_body().size() == 2);
+
+        auto test_pointer = sr.pointer_rigid_body().at(0);
+        CHECK(test_pointer.at(0) == pts.at(0));
+        CHECK_THROWS(test_pointer.at(1));
+        test_pointer = sr.pointer_rigid_body().at(1);
+        CHECK(test_pointer.at(0) == pts.at(3));
+        CHECK_THROWS(test_pointer.at(1));
+
+        auto test_fixed = sr.fixed_rigid_body().at(0);
+        CHECK(test_fixed.at(0) == pts.at(1));
+        CHECK_THROWS(test_fixed.at(1));
+        test_fixed = sr.fixed_rigid_body().at(1);
+        CHECK(test_fixed.at(0) == pts.at(4));
+        CHECK_THROWS(test_fixed.at(1));
+
+
+    }
+
+    remove(tmpfile.c_str());
+}
+
 
 #endif //CIS_ICP_FILES_H
