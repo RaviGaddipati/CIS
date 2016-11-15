@@ -16,6 +16,7 @@
 #include <fstream>
 #include "pointcloud.h"
 
+
 namespace cis {
 
     /**
@@ -83,7 +84,7 @@ namespace cis {
         void open(std::istream &in) override;
 
         /**
-         * @return Optical markers on the EM base
+         * @return LED markers on the rigid body
          */
         const PointCloud &markers() const {
             return this->_clouds.at(0).at(0);

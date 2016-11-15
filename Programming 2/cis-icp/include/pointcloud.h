@@ -13,6 +13,7 @@
 #define CIS_CAL_POINTCLOUD_H
 
 #include "Eigen"
+#include "Eigenvalues"
 #include <vector>
 #include <cmath>
 #include <doctest.h>
@@ -266,6 +267,7 @@ namespace cis {
     private:
         PointStore _cloud_matrix; // Stores all the points.
     };
+
 }
 
 /**

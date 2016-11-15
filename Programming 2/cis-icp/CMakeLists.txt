@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -pedantic -Wall -Wextra -
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-include_directories(eigen/Eigen include doctest/doctest)
+include_directories(eigen/Eigen include doctest/doctest )
 
 set(SOURCE_FILES
         src/main.cpp
@@ -18,6 +18,6 @@ set(SOURCE_FILES
         src/utils.cpp
         include/utils.h
         include/icp.h
-        src/icp.cpp src/surface.cpp include/surface.h)
+        src/icp.cpp src/surface.cpp include/surface.h include/registration.h src/registration.cpp src/horn.cpp)
 
 add_executable(cisicp ${SOURCE_FILES})

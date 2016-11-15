@@ -13,7 +13,6 @@
 #define CIS_ICP_ICP_H
 
 #include <iostream>
-#include "pointcloud.h"
 #include "utils.h"
 #include "files.h"
 
