@@ -9,6 +9,7 @@
  * @file
  */
 #include <iostream>
+#include <numeric>
 #include "files.h"
 #include "utils.h"
 

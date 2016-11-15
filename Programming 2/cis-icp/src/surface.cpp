@@ -2,6 +2,7 @@
 // Created by gaddra on 11/13/16.
 //
 
+#include <numeric>
 #include "surface.h"
 
 void cis::Surface::_reorder_longest_edge(Eigen::Vector3d &v1, Eigen::Vector3d &v2, Eigen::Vector3d &v3) {
