@@ -53,19 +53,26 @@ int main(const int argc, const char *argv[]) {
 
     //Want the debug file specific sample data
     const std::string sample_file = fileroot + "-SampleReadingsTest.txt",
-            output1_file = "OUTPUT/" + filename + "-Output.txt";
+            output1_file = "OUTPUT/" + filename + "-Output.txt",
+            surface_file = "INPUT/Problem3MeshFile.sur";
 
     //Open all of the files
     cis::RigidBody bodyA(rigidbodyA_file);
     cis::RigidBody bodyB(rigidbodyB_file);
+    cis::SurfaceFile sur(surface_file);
 
     //Given the sample readings file, compute the transformation on each frame
-    cis::SampleReadings samples(sample_file,bodyA.size(),bodyB.size());
+    cis::SampleReadings samples(sample_file,bodyA.markers().size(),bodyB.markers().size());
 
     //Compute the point cloud of tip coordinates with respect to the fixed rigid body
-    cis::PointCloud d = cis::pointer_to_fixed(bodyA,bodyB,samples.pointer_rigid_body(),samples.fixed_rigid_body());
+    cis::PointCloud d = cis::pointer_to_fixed(bodyA, bodyB, samples.pointer_rigid_body(), samples.fixed_rigid_body());
+    cis::PointCloud closest_points;
+    for (size_t p = 0; p < d.size(); ++p) {
+        closest_points.add_point(cis::project_onto_surface_naive(d.at(p), sur));
+    }
 
-    std::cout << d << std::endl;
+    std::cout << d << std::endl << std::endl;
+    std::cout << closest_points << std::endl;
 
 
 
