@@ -11,13 +11,16 @@ include_directories(eigen/Eigen include doctest/doctest )
 
 set(SOURCE_FILES
         src/main.cpp
-        include/main.h
         include/files.h
         src/files.cpp
         include/pointcloud.h
         src/utils.cpp
         include/utils.h
         include/icp.h
-        src/icp.cpp src/surface.cpp include/surface.h include/registration.h src/registration.cpp src/horn.cpp)
+        src/icp.cpp
+        include/registration.h
+        src/registration.cpp
+        src/horn.cpp
+        include/horn.h)
 
 add_executable(cisicp ${SOURCE_FILES})

@@ -1,11 +1,18 @@
-//
-// Created by Doran W on 11/14/16.
-//
+/**
+ * @author Doran Walsten, Ravi Gaddipati
+ * @date Nov 15, 2016
+ *
+ * @brief
+ * Registration between fixed and mobile bodies.
+ *
+ * @file
+ */
 
 #ifndef CIS_ICP_REGISTRATION_H
 #define CIS_ICP_REGISTRATION_H
 
 #include "files.h"
+#include "pointcloud.h"
 
 namespace cis {
 
@@ -17,10 +24,11 @@ namespace cis {
      * @param fixedRef
      * @param pointerframes
      * @param fixedframes
-     * @return
+     * @return PointCloud
      */
-    cis::PointCloud
-    pointer_to_fixed(const cis::RigidBody &pointerRef, const cis::RigidBody &fixedRef,
-                     const std::vector<cis::PointCloud> &pointerframes,const std::vector<cis::PointCloud> &fixedframes);
+    cis::PointCloud pointer_to_fixed(const cis::RigidBody &pointerRef,
+                                     const cis::RigidBody &fixedRef,
+                                     const std::vector<cis::PointCloud> &pointerframes,
+                                     const std::vector<cis::PointCloud> &fixedframes);
 }
 #endif //CIS_ICP_REGISTRATION_H

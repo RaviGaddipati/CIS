@@ -121,6 +121,16 @@ void normalize_whitespace(std::string &line) {
 }
 
 /**
+ * If spaces and commas are used as delims, make them all commas.
+ */
+__INLINE__
+void make_uniform(std::string &line) {
+    std::replace_if(line.begin(), line.end(), isspace, ',');
+    line.erase(std::unique(line.begin(), line.end(),
+                           [](const char l, const char r) {return (l == r) && (l == ',');}), line.end());
+}
+
+/**
  * Compile time power. Adapted from:
  * http://stackoverflow.com/questions/27270541/is-there-no-built-in-way-to-compute-a-power-at-compile-time-in-c
  * @param base

@@ -1,6 +1,6 @@
 /**
- * @author Ravi Gaddipati
- * @date Nov 2, 2016
+ * @author Ravi Gaddipati, Doran Walsten
+ * @date Nov 16, 2016
  * rgaddip1@jhu.edu
  *
  * @brief
@@ -34,6 +34,9 @@ namespace cis {
 
         virtual void open(std::istream &) = 0;
 
+        /**
+         * @return Number of frames if data exists, else 0
+         */
         virtual size_t size() const  {
             return _clouds.size() > 0 ? _clouds.at(0).size() : 0;
         };
@@ -41,6 +44,7 @@ namespace cis {
         virtual std::string name() const {
             return _name;
         };
+
         virtual const std::vector<PointCloud> &get(const size_t i) const {
             return _clouds.at(i);
         }
@@ -99,8 +103,10 @@ namespace cis {
 
     };
 
+    /**
+     * Loads a file defining a surgace.
+     */
     class SurfaceFile : public File {
-        // TODO On load, compute center of bounding sphere of each triangle
     public:
         using File::open;
 
@@ -111,20 +117,31 @@ namespace cis {
 
         void open(std::istream &in) override;
 
+        /**
+         * @return PointCloud of all the vertices.
+         */
         const PointCloud &vertices() const {
             return this->_clouds.at(0).at(0);
         }
 
+        /**
+         * @return Array providing the indicies of each vertex for each triangle.
+         */
         const Eigen::Array<long, Eigen::Dynamic, 3> &triangles() const {
             return this->_tri;
         }
 
+        /**
+         * @return All the triangles, where each column is XYZ of each vertex.
+         */
         Eigen::Array<double, 9, Eigen::Dynamic> cat_triangles() const;
 
+        /**
+         * @return Indicies of neighboring triangles.
+         */
         const Eigen::Array<long, Eigen::Dynamic, 3> &neighbor_triangles() const {
             return this->_neighbor;
         }
-
 
 
     private:
@@ -139,7 +156,7 @@ namespace cis {
         SampleReadings() {}
 
         /**
-         * @param file Open the given file
+         * @param file Open the given sample readings with N_a points in body A and N_b in body B
          */
         SampleReadings(std::string file, size_t N_a, size_t N_b) {
             this->N_a = N_a;
@@ -160,7 +177,6 @@ namespace cis {
         }
 
         /**
-         *
          * @return Frams of LED markers on the fixed rigid body in the bone
          */
         const std::vector<PointCloud> &fixed_rigid_body() const {
