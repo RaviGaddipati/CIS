@@ -9,8 +9,7 @@
  * Usage:
  *  cisicp test
  * OR:
- *  cisicp fileroot
- * See printed usage for more info.
+ *  cisicp SurfaceFile PointerBodyFile FixedBodyFile SampleReadingsFile OutputFile [DebugOutput]
  *
  * @file
  */
@@ -57,25 +56,31 @@ void compare_outputs(std::string file1, std::string file2) {
 
         const auto arec = split(line, ',');
         const auto brec = split(line2, ',');
+
         if (arec.size() != 7 || brec.size() != 7)
             throw std::invalid_argument("Invalid line format in output file:\n\t" + line + "\n\t" + line2);
+
         std::vector<std::string> ad(arec.begin(), arec.begin() + 3);
         std::vector<std::string> bd(brec.begin(), brec.begin() + 3);
         std::vector<std::string> ac(arec.begin() + 3, arec.begin() + 6);
         std::vector<std::string> bc(arec.begin() + 3, arec.begin() + 6);
         double a_diff = std::stod(arec[6]);
         double b_diff = std::stof(brec[6]);
+
         if (ad.size() != 3 || bd.size() != 3 || ac.size() != 3 || bc.size() != 3)
             throw std::invalid_argument("Malformed point in lines:\n\t" + line + "\n\t" + line2);
+
         const cis::Point ad_p = {std::stod(ad[0]), std::stod(ad[1]), std::stod(ad[2])};
         const cis::Point bd_p = {std::stod(bd[0]), std::stod(bd[1]), std::stod(bd[2])};
         const cis::Point ac_p = {std::stod(ac[0]), std::stod(ac[1]), std::stod(ac[2])};
         const cis::Point bc_p = {std::stod(bc[0]), std::stod(bc[1]), std::stod(bc[2])};
+
         d_err += (ad_p - bd_p).norm();
         c_err += (ac_p - bc_p).norm();
         diff_err += std::abs(a_diff - b_diff);
     }
 
+    std::cout << "Comparing \"" << file1 << "\" and \"" << file2 << "\"\n";
     std::cout << "\nd_k average error: " << d_err/Na << "\n"
               << "c_k average error: " << c_err/Na << "\n"
               << "Difference average error: " << diff_err/Na << "\n" << std::endl;
