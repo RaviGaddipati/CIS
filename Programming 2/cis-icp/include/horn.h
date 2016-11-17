@@ -12,6 +12,7 @@
 #ifndef CIS_CAL_HORN_H
 #define CIS_CAL_HORN_H
 
+#include <iostream>
 #include "pointcloud.h"
 #include "Eigen"
 #include "Eigenvalues"
@@ -43,32 +44,40 @@ namespace cis {
 
 TEST_CASE ("Horn cloud-to-cloud") {
 using namespace cis;
-    PointCloud pc1{{{1, 2, 3}, {0, 1, .5}, {0, 0, 1}, {-1, 0, 0}, {3, 8, 7}}};
-    {
-        Eigen::Translation<double, 3> trans(1, 1, 1);
-        for (int i = 0; i < pc1.size(); ++i) {
-            pc1.set(i, trans * pc1.at(i));
+    //Generate 4 random point clouds, transform by a random transformation, confirm that the horn method
+    //finds the appropriate transformation
+    for (int i = 0; i < 4; i++) {
+        PointCloud pc1;
+        for (int j = 0; j < 5; j++) {
+            Point toAdd = {rand() % 10, rand() % 10, rand() % 10 };
+            pc1.add_point(toAdd);
         }
+        {
+            Eigen::Translation<double, 3> trans(1, 1, 1);
+            for (int i = 0; i < pc1.size(); ++i) {
+                pc1.set(i, trans * pc1.at(i));
+            }
+        }
+
+        // Transform first set of points
+        Eigen::Transform<double, 3, Eigen::Affine> trans(
+                Eigen::Translation<double, 3>(rand() % 10, rand() % 10, rand() % 10) *
+                Eigen::AngleAxis<double>(rand() % 3, Eigen::Vector3d::UnitZ()) *
+                Eigen::AngleAxis<double>(rand() % 3, Eigen::Vector3d::UnitY()) *
+                Eigen::AngleAxis<double>(rand() % 3, Eigen::Vector3d::UnitX())
+        );
+
+        PointCloud pc2;
+        for (size_t i = 0; i < pc1.size(); ++i) {
+            pc2.add_point(trans * pc1.at(i));
+        }
+
+
+        auto estimated = cloud_to_cloud(pc1, pc2);
+        // isApprox because floating point
+                CHECK(estimated.rotation().isApprox(trans.rotation()));
+                CHECK(estimated.translation().isApprox(trans.translation()));
     }
-
-    // Transform first set of points
-    Eigen::Transform<double, 3, Eigen::Affine> trans(
-            Eigen::Translation<double, 3>(1, 2, 3) *
-            Eigen::AngleAxis<double>(3, Eigen::Vector3d::UnitZ()) *
-            Eigen::AngleAxis<double>(2, Eigen::Vector3d::UnitY()) *
-            Eigen::AngleAxis<double>(1, Eigen::Vector3d::UnitX())
-    );
-
-    PointCloud pc2;
-    for (size_t i = 0; i < pc1.size(); ++i) {
-        pc2.add_point(trans * pc1.at(i));
-    }
-
-
-    auto estimated = cloud_to_cloud(pc1, pc2);
-    // isApprox because floating point
-            CHECK(estimated.rotation().isApprox(trans.rotation()));
-            CHECK(estimated.translation().isApprox(trans.translation()));
 }
 
 #endif //CIS_CAL_HORN_H
