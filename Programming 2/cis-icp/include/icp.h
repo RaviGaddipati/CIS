@@ -15,29 +15,9 @@
 #include <iostream>
 #include "utils.h"
 #include "files.h"
+#include "surface.h"
 
 namespace cis {
-
-    /**
-     * @brief
-     * Project the point c onto the line segment with endpoints p,q.
-     * @param c Point to project
-     * @param p endpoint 1
-     * @param q endpoint 2
-     * @return Projected point
-     */
-    Point project_onto_segment(const Point &c, const Point &p, const Point &q);
-
-    /**
-     * @brief
-     * Computes the closest point on the triangle, including the edges to point P.
-     * @param p Projects this point onto triangle formed by verticies v1,v2,v3
-     * @param v1 Vertex 1
-     * @param v2 Vertex 2
-     * @param v3 Vertex 3
-     * @return Point on triangle closest to p
-     */
-    Point project_onto_triangle(const Point &p, const Point &v1, const Point &v2, const Point &v3);
 
     /**
      * @brief
@@ -49,16 +29,6 @@ namespace cis {
      */
     Point project_onto_surface_naive(const Point &p, const SurfaceFile &surface);
 
-
-    /**
-     * Given a point, finds the closest point on the mesh. Uses k-d tree data structure to
-     * improve search speed over the naive linear case
-     * @param p  Point to project
-     * @param surface Surface to project onto
-     * @return The closest point on the surface
-     */
-    Point project_onto_surface_kd(const Point &p, const SurfaceFile &surface);
-
     /**
      * Given a point cloud of feature points, performs ICP algorithm to determine the best registration transformation
      * between the feature point space and the surface space
@@ -67,6 +37,12 @@ namespace cis {
      * @return The estimated registration transformation following ICP
      */
     Eigen::Transform<double, 3, Eigen::Affine> icp(const PointCloud &q, const SurfaceFile &surfaceFile);
+
+    Point project_onto_surface_kdtree(const Point &p, std::shared_ptr<Surface::Division> root);
+
+    inline Point project_onto_surface_kdtree(const Point &p, const Surface &s) {
+        return project_onto_surface_kdtree(p, s.root());
+    }
 
 }
 

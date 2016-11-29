@@ -49,7 +49,7 @@ using namespace cis;
     for (int i = 0; i < 4; i++) {
         PointCloud pc1;
         for (int j = 0; j < 5; j++) {
-            Point toAdd = {rand() % 10, rand() % 10, rand() % 10 };
+            Point toAdd = {double(rand() % 10), double(rand() % 10), double(rand() % 10) };
             pc1.add_point(toAdd);
         }
         {
@@ -62,14 +62,14 @@ using namespace cis;
         // Transform first set of points
         Eigen::Transform<double, 3, Eigen::Affine> trans(
                 Eigen::Translation<double, 3>(rand() % 10, rand() % 10, rand() % 10) *
-                Eigen::AngleAxis<double>(rand() % 3, Eigen::Vector3d::UnitZ()) *
-                Eigen::AngleAxis<double>(rand() % 3, Eigen::Vector3d::UnitY()) *
-                Eigen::AngleAxis<double>(rand() % 3, Eigen::Vector3d::UnitX())
+                Eigen::AngleAxis<double>(double(rand() % 3), Eigen::Vector3d::UnitZ()) *
+                Eigen::AngleAxis<double>(double(rand() % 3), Eigen::Vector3d::UnitY()) *
+                Eigen::AngleAxis<double>(double(rand() % 3), Eigen::Vector3d::UnitX())
         );
 
         PointCloud pc2;
-        for (size_t i = 0; i < pc1.size(); ++i) {
-            pc2.add_point(trans * pc1.at(i));
+        for (size_t j = 0; j < pc1.size(); ++j) {
+            pc2.add_point(trans * pc1.at(j));
         }
 
 

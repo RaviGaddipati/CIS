@@ -13,47 +13,6 @@
 #include "icp.h"
 
 
-
-cis::Point cis::project_onto_segment(const cis::Point &c, const cis::Point &p, const cis::Point &q) {
-    const Point qmp = q - p;
-    return p + ( max(0.0, min((c-p).dot(qmp) / qmp.dot(qmp), 1.0)) * qmp );
-}
-
-cis::Point cis::project_onto_triangle(const cis::Point &p,
-                                      const cis::Point &v1, const cis::Point &v2, const cis::Point &v3) {
-    // Define triangle as vertex and two edges
-    const Eigen::Vector3d u = v2 - v1,
-            v = v3 - v1,
-            w = p - v1,
-            n = u.cross(v);
-    const double inv_n_sq = 1.0 / n.dot(n);
-
-    // Barycentric coords
-    const double b2 = (u.cross(w)).dot(n) * inv_n_sq,
-            b1 = (w.cross(v)).dot(n) * inv_n_sq,
-            b0 = 1 - b1 - b2;
-
-    // If all barycentric coords are >= 0, inside triangle / on edge
-    if (b2 >= 0 && b1 >= 0 && b0 >= 0) return Point((v1 * b0) + (v2 * b1) + (v3 * b2));
-
-    // Lies on opposite side of v1
-    if (b0 <= 0) {
-        if (b2 <= 0) return v2;
-        if (b1 <= 0) return v3;
-        return project_onto_segment(p, v2, v3);
-    }
-
-    // Lies on opposite side of v2
-    if (b1 <= 0) {
-        if (b2 <= 0) return v1;
-        return project_onto_segment(p, v1, v3);
-    }
-
-    // Lies on opposite side of v3
-    assert(b2 <= 0 && "Default case should always be true if previous projections are not");
-    return project_onto_segment(p, v1, v2);
-}
-
 cis::Point cis::project_onto_surface_naive(const Point &p, const SurfaceFile &surface) {
     auto &vert = surface.vertices();
     auto &triangles = surface.triangles();
@@ -72,12 +31,6 @@ cis::Point cis::project_onto_surface_naive(const Point &p, const SurfaceFile &su
     return min_point;
 }
 
-cis::Point cis::project_onto_surface_kd(const Point &p, const SurfaceFile &surface) {
-
-    //Nearest neighbor search through the tree?
-
-    return nullptr;
-}
 
 Eigen::Transform<double, 3, Eigen::Affine> cis::icp(const PointCloud &q, const SurfaceFile &surfaceFile) {
     //Generate the root surface to match to
@@ -119,4 +72,8 @@ Eigen::Transform<double, 3, Eigen::Affine> cis::icp(const PointCloud &q, const S
     }
 
     return F_reg;
+}
+
+cis::Point cis::project_onto_surface_kdtree(const cis::Point &p,std::shared_ptr<cis::Surface::Division> root) {
+
 }

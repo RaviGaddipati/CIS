@@ -21,6 +21,8 @@ set(SOURCE_FILES
         include/registration.h
         src/registration.cpp
         src/horn.cpp
-        include/horn.h)
+        include/horn.h
+        src/surface.cpp
+        include/surface.h)
 
 add_executable(cisicp ${SOURCE_FILES})
