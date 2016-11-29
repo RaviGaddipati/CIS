@@ -3,6 +3,7 @@
 //
 
 #include <numeric>
+#include <random>
 #include "surface.h"
 #include "doctest.h"
 #include "utils.h"
@@ -102,6 +103,7 @@ void cis::Surface::Division::_find_closest_impl(const cis::Point &v, double &bou
     const Eigen::Vector3d scenter = _surface->_spheres.col(_middle);
     // Leaf
     if (size() == 0) {
+        std::cout << "Leaf" << std::endl;
         double dist = (v - scenter).squaredNorm() - _surface->_radii.at(_middle);
         if (dist < bound) {
             const auto &tri = at(0);
@@ -119,11 +121,13 @@ void cis::Surface::Division::_find_closest_impl(const cis::Point &v, double &bou
     }
 
     if (v < *this) {
+        std::cout <<"Check Left" << std::endl;
         left()->_find_closest_impl(v, bound, closest);
         if (v(_split_plane) - scenter(_split_plane) - _surface->max_radius() < bound) {
             right()->_find_closest_impl(v, bound, closest);
         }
     } else {
+        std::cout <<"Check Right" << std::endl;
         right()->_find_closest_impl(v, bound, closest);
         if (v(_split_plane) - scenter(_split_plane) - _surface->max_radius() < bound) {
             left()->_find_closest_impl(v, bound, closest);
@@ -234,6 +238,49 @@ TEST_CASE("Surface tree") {
                 q.push_back(curr->right());
             }
         }
+    }
+
+    SUBCASE("Closest Point") {
+        //Generate random points with x >= 1, 1 >= y > 0, 2 >= z >= 0 (project onto face of prism)
+        std::default_random_engine generator (rand() % 10);
+
+        std::uniform_real_distribution<double> range_distribution (1.0,20.0);
+        std::uniform_real_distribution<double> step_distribution (0.0,1.0);
+        std::uniform_real_distribution<double> z_distribution (0.0,2.0);
+        cis::PointCloud pc1;
+        for (int j = 0; j < 5; j++) {
+            cis::Point toAdd = {range_distribution(generator), step_distribution(generator), z_distribution(generator) };
+            pc1.add_point(toAdd);
+        }
+
+        //Generate random points with 1 >= x >= 0 , y >= 1, 2 >= z >= 0 (project onto another face of prism
+        cis::PointCloud pc2;
+        for (int j = 0; j < 5; j++) {
+            cis::Point toAdd = {step_distribution(generator), range_distribution(generator), z_distribution(generator) };
+            pc2.add_point(toAdd);
+        }
+
+        //Generate random point x >=1, y >=1, 2 >= z >= 0 (project onto an edge of the prism
+        cis::PointCloud pc3;
+        for (int j = 0; j < 5; j++) {
+            cis::Point toAdd = {range_distribution(generator), range_distribution(generator), z_distribution(generator) };
+            pc3.add_point(toAdd);
+        }
+
+        //For each of the test point clouds, check to confirm that the expected closest point is determined
+        //pc1 : in the form (1,y,z)
+        for (size_t i = 0; i < pc1.size(); i++ ) {
+            //std::cout << pc1.at(i) << std::endl;
+            std::cout << s.root().get()->find_closest_point(pc1.at(i)) << "\n----\n" << std::endl ;
+        }
+        CHECK(true);
+
+        //pc2: in the form (x,1,z)
+
+
+        //pc3: in the form (1,1,z)
+
+
     }
 
 
