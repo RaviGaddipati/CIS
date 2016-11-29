@@ -9,7 +9,9 @@
  * @file
  */
 
+#include <surface.h>
 #include "icp.h"
+
 
 
 cis::Point cis::project_onto_segment(const cis::Point &c, const cis::Point &p, const cis::Point &q) {
@@ -68,4 +70,53 @@ cis::Point cis::project_onto_surface_naive(const Point &p, const SurfaceFile &su
         }
     }
     return min_point;
+}
+
+cis::Point cis::project_onto_surface_kd(const Point &p, const SurfaceFile &surface) {
+
+    //Nearest neighbor search through the tree?
+
+    return nullptr;
+}
+
+Eigen::Transform<double, 3, Eigen::Affine> cis::icp(const PointCloud &q, const SurfaceFile &surfaceFile) {
+    //Generate the root surface to match to
+    cis::Surface surface(surfaceFile.cat_triangles(), surfaceFile.neighbor_triangles());
+
+    //Initialize all relevant parameters
+    //eta (learning rate)
+    //sigma (standard dev of error)
+    //max_error
+    //mean_error
+
+    //Initialize the registration transformation as just an identity matrix
+    Eigen::Transform<double, 3, Eigen::Affine> F_reg(
+            Eigen::Translation<double, 3>(0, 0, 0) *
+            Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitZ()) *
+            Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitY()) *
+            Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitX())
+    );
+
+    //Hold whether terminating condition is satisfied
+    bool term = true;
+
+    while (!term) {
+        cis::PointCloud A();
+        cis::PointCloud B();
+
+        for (size_t p = 0; p < q.size(); ++p) {
+            //Use project_onto_surface_kd given F_reg
+
+            //if difference is below threshold eta, add original point to A, closest point to B
+        }
+
+        //Use Horn method to find new best transformation from A to B
+
+        //Update parameters (see slides)
+
+        //if termination condition is met, update term
+
+    }
+
+    return F_reg;
 }

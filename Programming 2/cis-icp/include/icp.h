@@ -49,6 +49,25 @@ namespace cis {
      */
     Point project_onto_surface_naive(const Point &p, const SurfaceFile &surface);
 
+
+    /**
+     * Given a point, finds the closest point on the mesh. Uses k-d tree data structure to
+     * improve search speed over the naive linear case
+     * @param p  Point to project
+     * @param surface Surface to project onto
+     * @return The closest point on the surface
+     */
+    Point project_onto_surface_kd(const Point &p, const SurfaceFile &surface);
+
+    /**
+     * Given a point cloud of feature points, performs ICP algorithm to determine the best registration transformation
+     * between the feature point space and the surface space
+     * @param q Original point cloud of feature points
+     * @param surfaceFile Surface file to register to
+     * @return The estimated registration transformation following ICP
+     */
+    Eigen::Transform<double, 3, Eigen::Affine> icp(const PointCloud &q, const SurfaceFile &surfaceFile);
+
 }
 
 TEST_CASE ("Segment Projection") {
