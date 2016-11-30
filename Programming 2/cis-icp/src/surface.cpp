@@ -343,7 +343,6 @@ TEST_CASE("Surface tree") {
             CHECK(c(0) == 1);
             CHECK(c(1) == 1);
             if (c(1) != 1) std::cout << s.root();
-            s.root()->find_closest_point(pc3.at(i));
         }
 
 
