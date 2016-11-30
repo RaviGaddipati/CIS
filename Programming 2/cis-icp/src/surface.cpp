@@ -1,6 +1,13 @@
-//
-// Created by gaddra on 11/13/16.
-//
+/**
+ * @author Ravi Gaddipati, Doran Walsten
+ * @date Nov 30, 2016
+ * rgaddip1@jhu.edu
+ *
+ * @brief
+ * Represents a surface as a Kd-tree
+ *
+ * @file
+ */
 
 #include <numeric>
 #include <random>

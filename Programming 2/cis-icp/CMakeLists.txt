@@ -26,3 +26,6 @@ set(SOURCE_FILES
         include/surface.h)
 
 add_executable(cisicp ${SOURCE_FILES})
+add_executable(cisicp_naive ${SOURCE_FILES})
+
+target_compile_definitions(cisicp_naive PRIVATE CIS_ICP_USE_NAIVE=1)

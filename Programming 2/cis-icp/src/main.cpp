@@ -33,7 +33,7 @@ void compare_outputs(std::string file1, std::string file2) {
     std::ifstream a(file1);
     if (!a.good()) throw std::invalid_argument("Error opening file: " + file1);
     std::ifstream b(file2);
-    if (!a.good()) throw std::invalid_argument("Error opening file: " + file2);
+    if (!b.good()) throw std::invalid_argument("Error opening file: " + file2);
 
     // Parse meta information
     std::string line;
@@ -49,7 +49,7 @@ void compare_outputs(std::string file1, std::string file2) {
     }
 
     std::string line2;
-    double d_err = 0, c_err = 0, diff_err = 0;
+    double s_err = 0, c_err = 0, diff_err = 0;
     while (std::getline(a, line) && std::getline(b, line2)) {
         make_uniform(line);
         make_uniform(line2);
@@ -63,7 +63,7 @@ void compare_outputs(std::string file1, std::string file2) {
         std::vector<std::string> ad(arec.begin(), arec.begin() + 3);
         std::vector<std::string> bd(brec.begin(), brec.begin() + 3);
         std::vector<std::string> ac(arec.begin() + 3, arec.begin() + 6);
-        std::vector<std::string> bc(arec.begin() + 3, arec.begin() + 6);
+        std::vector<std::string> bc(brec.begin() + 3, brec.begin() + 6);
         double a_diff = std::stod(arec[6]);
         double b_diff = std::stof(brec[6]);
 
@@ -75,13 +75,13 @@ void compare_outputs(std::string file1, std::string file2) {
         const cis::Point ac_p = {std::stod(ac[0]), std::stod(ac[1]), std::stod(ac[2])};
         const cis::Point bc_p = {std::stod(bc[0]), std::stod(bc[1]), std::stod(bc[2])};
 
-        d_err += (ad_p - bd_p).norm();
+        s_err += (ad_p - bd_p).norm();
         c_err += (ac_p - bc_p).norm();
         diff_err += std::abs(a_diff - b_diff);
     }
 
     std::cout << "Comparing \"" << file1 << "\" and \"" << file2 << "\"\n";
-    std::cout << "\nd_k average error: " << d_err/Na << "\n"
+    std::cout << "\ns_k average error: " << s_err/Na << "\n"
               << "c_k average error: " << c_err/Na << "\n"
               << "Difference average error: " << diff_err/Na << "\n" << std::endl;
 }
@@ -113,8 +113,12 @@ void find_closest(const int argc, const char *argv[]) {
     cis::Surface surface(sur.cat_triangles(), sur.neighbor_triangles());
     for (size_t p = 0; p < d.size(); ++p) {
         s.add_point(F_reg * d.at(p));
-        closest_points.add_point(cis::project_onto_surface_kdtree(F_reg * d.at(p),surface));
-        //closest_points.add_point(cis::project_onto_surface_naive(d.at(p), sur));
+        closest_points.add_point(cis::project_onto_surface_kdtree(F_reg * d.at(p), surface));
+        /**
+         * PA3
+         * closest_points.add_point(cis::project_onto_surface_naive(d.at(p), sur));
+         */
+
     }
 
     std::ofstream o(output_file);

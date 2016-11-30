@@ -1,6 +1,13 @@
-//
-// Created by gaddra on 11/13/16.
-//
+/**
+ * @author Ravi Gaddipati, Doran Walsten
+ * @date Nov 30, 2016
+ * rgaddip1@jhu.edu
+ *
+ * @brief
+ * Represents a surface as a Kd-tree
+ *
+ * @file
+ */
 
 #ifndef CIS_ICP_SURFACE_H
 #define CIS_ICP_SURFACE_H
@@ -23,6 +30,9 @@ namespace cis {
          * @brief
          * Allows for subdivisions of the surface represented as a kd-tree. Left and
          * right children are generated as they are requested.
+         * @details
+         * The node split point is always one of the points, no interpolation is done. Each split point
+         * is not included in the children.
          */
         class Division {
         public:
@@ -70,7 +80,7 @@ namespace cis {
              * @return ptr to left subtree
              */
             std::shared_ptr<Division> left() {
-                if (_left == nullptr) subdivide();
+                if (_left == nullptr && _right == nullptr) subdivide();
                 return _left;
             }
 
@@ -78,7 +88,7 @@ namespace cis {
              * @return ptr to right subtree
              */
             std::shared_ptr<Division> right() {
-                if (_right == nullptr) subdivide();
+                if (_left == nullptr && _right == nullptr) subdivide();
                 return _right;
             }
 
@@ -86,7 +96,7 @@ namespace cis {
              * @return The median of the included spheres
              */
             Point value() {
-                if (_left == nullptr || _right == nullptr) subdivide();
+                if (_left == nullptr && _right == nullptr) subdivide();
                 return _surface->_spheres.col(_middle);
             }
 
@@ -97,8 +107,20 @@ namespace cis {
                 return _split_plane;
             }
 
+            /**
+             * @brief
+             * Given a point, find the closest point on the surface.
+             * @param v
+             * @return
+             */
             Point find_closest_point(const Point &v);
 
+            /**
+             * @brief
+             * Print the split point followed by all children, indentation determined by level.
+             * @param level
+             * @return multi-line string tree repersentation
+             */
             std::string to_string(int level=0);
 
         protected:
@@ -202,8 +224,8 @@ namespace cis {
          * @param radius If the radius is desired, pass a double ptr
          * @return Sphere centroid
          */
-        static Eigen::Vector3d _bounding_sphere(const Eigen::Matrix<double, 9, Eigen::Dynamic> &triangle,
-                                                double *radius=nullptr);
+        static Eigen::Vector3d
+        _bounding_sphere(const Eigen::Matrix<double, 9, Eigen::Dynamic> &triangle, double *radius=nullptr);
 
     };
 
@@ -216,6 +238,14 @@ namespace cis {
      */
     bool operator<(const Point &p, Surface::Division &d);
     bool operator<(const Point &p, std::shared_ptr<Surface::Division> d);
+
+    /**
+     * @brief
+     * Print a tree.
+     * @param os Output stream
+     * @param d Root division to print all children of
+     * @return Split point followed by children on a new line.
+     */
     std::ostream &operator<<(std::ostream &os, Surface::Division &d);
     std::ostream &operator<<(std::ostream &os, std::shared_ptr<Surface::Division> d);
 
