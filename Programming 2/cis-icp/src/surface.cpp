@@ -114,40 +114,31 @@ void cis::Surface::Division::_find_closest_impl(const cis::Point &v, double &bou
     subdivide();
     const Eigen::Vector3d scenter = _surface->_spheres.col(_middle);
 
-    double dist = (v - scenter).squaredNorm() - _surface->_radii.at(_middle);
-    if (dist <= bound) {
-        const auto &tri = at(0);
+    double dist = (v - scenter).norm() - _surface->_radii.at(_middle);
+    if (dist < bound) {
+        const auto &tri = _surface->_triangles.col(_middle);
         const auto cp = project_onto_triangle(v, tri.block<3,1>(0,0), tri.block<3,1>(3,0), tri.block<3,1>(6,0));
-        dist = (cp - v).squaredNorm();
+        dist = (cp - v).norm();
         if (dist < bound) {
             bound = dist;
             closest = cp;
-            std::cerr << "-N-";
         }
     }
 
 
     if (v < *this) {
         if (_left) {
-            std::cerr << "\\L";
             _left->_find_closest_impl(v, bound, closest);
-            std::cerr << "/";
         }
         if (_right && v(_split_plane) - scenter(_split_plane) - _surface->_max_radius < bound) {
-            std::cerr << "\\R";
             _right->_find_closest_impl(v, bound, closest);
-            std::cerr << "/";
         }
     } else {
         if (_right) {
-            std::cerr << "\\R";
             right()->_find_closest_impl(v, bound, closest);
-            std::cerr << "/";
         }
         if (_left && v(_split_plane) - scenter(_split_plane) - _surface->_max_radius < bound) {
-            std::cerr << "\\L";
             _left->_find_closest_impl(v, bound, closest);
-            std::cerr << "/";
         }
     }
 
@@ -169,9 +160,7 @@ std::string cis::Surface::Division::to_string(int level) {
 cis::Point cis::Surface::Division::find_closest_point(const cis::Point &v) {
     Point ret;
     double bnd = std::numeric_limits<double>::max();
-    std::cerr << "\n";
     _find_closest_impl(v, bnd, ret);
-    std::cerr << std::endl;
     return ret;
 }
 
@@ -338,10 +327,7 @@ TEST_CASE("Surface tree") {
 
         //pc3: in the form (1,1,z)
         for (size_t i = 0; i < pc3.size(); i++ ) {
-            std::cerr << "---------------------------------\n" << pc3.at(i) << std::endl;
             const auto c = s.root()->find_closest_point(pc3.at(i));
-            std::cerr << c << "\n" << std::endl;
-            if (c(1) != 1) std::cerr << std::flush << s.root() << std::endl;
             CHECK(c(0) == 1);
             CHECK(c(1) == 1);
         }

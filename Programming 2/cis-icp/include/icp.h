@@ -12,6 +12,8 @@
 #ifndef CIS_ICP_ICP_H
 #define CIS_ICP_ICP_H
 
+#define CIS_ICP_USE_NAIVE 0
+
 #include <iostream>
 #include "utils.h"
 #include "files.h"
