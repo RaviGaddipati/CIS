@@ -10,6 +10,7 @@
  */
 
 #include <surface.h>
+#include <horn.h>
 #include "icp.h"
 
 
@@ -37,43 +38,78 @@ Eigen::Transform<double, 3, Eigen::Affine> cis::icp(const PointCloud &q, const S
     cis::Surface surface(surfaceFile.cat_triangles(), surfaceFile.neighbor_triangles());
 
     //Initialize all relevant parameters
-    //eta (learning rate)
-    //sigma (standard dev of error)
-    //max_error
-    //mean_error
+    double eta = 200; //Generous initial bound
+    double gamma = 0.95; //Threshold for the terminating condition
+    std::vector<double> sigma;
+    std::vector<double> mean_error;
 
     //Initialize the registration transformation as just an identity matrix
     Eigen::Transform<double, 3, Eigen::Affine> F_reg(
-            Eigen::Translation<double, 3>(0, 0, 0) *
+            Eigen::Translation<double, 3>(-100, 100, 50) *
             Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitZ()) *
             Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitY()) *
             Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitX())
     );
 
     //Hold whether terminating condition is satisfied
-    bool term = true;
+    bool term = false;
+
+    //Maintain a counter for debugging
+    int counter = 0;
 
     while (!term) {
-        cis::PointCloud A();
-        cis::PointCloud B();
+        std::cout << counter << std::endl;
+        cis::PointCloud A;
+        cis::PointCloud B;
+        cis::PointCloud E;
 
         for (size_t p = 0; p < q.size(); ++p) {
             //Use project_onto_surface_kd given F_reg
+            cis::Point c_k = surface.root()->find_closest_point(F_reg*q.at(p));
+            cis::Point d = c_k - F_reg * q.at(p);
 
-            //if difference is below threshold eta, add original point to A, closest point to B
+            //If valid pair, add to the clouds above
+            if (d.norm() < eta) {
+                //std::cerr << d.norm() << std::endl;
+                A.add_point(q.at(p));
+                B.add_point(c_k);
+            }
         }
 
         //Use Horn method to find new best transformation from A to B
+        F_reg = cloud_to_cloud(A,B);
 
-        //Update parameters (see slides)
+        //Determine error and update eta
+        double sig = 0;
+        double mean = 0;
+        for (size_t i = 0; i < A.size(); i++) {
+            Point e = B.at(i) - F_reg * A.at(i);
+            E.add_point(e);
+            sig = sig + e.squaredNorm();
+            mean = mean + e.norm();
+        }
+        sigma.push_back(sqrt(sig)/E.size());
+        mean_error.push_back(mean/E.size());
+        //std::cerr << mean_error.back() << std::endl;
 
+        eta = 3*eta; //Maybe this is the last element? May have to confirm
         //if termination condition is met, update term
+        if (mean_error.size() > 2 && mean_error.back() < 5) {
+            double crit = mean_error.back() / mean_error.at(mean_error.size() - 2);
+            term = (gamma <= crit &&
+                   crit <= 1) || mean_error.back() < 1;
+            //std::cout << crit << std::endl;
 
+        }
+        counter = counter + 1;
     }
 
     return F_reg;
 }
 
 cis::Point cis::project_onto_surface_kdtree(const cis::Point &p,std::shared_ptr<cis::Surface::Division> root) {
+    return root->find_closest_point(p);
+
+
 
 }

@@ -105,24 +105,31 @@ void find_closest(const int argc, const char *argv[]) {
     //Compute the point cloud of tip coordinates with respect to the fixed rigid body
     cis::PointCloud d = cis::pointer_to_fixed(bodyA, bodyB, samples.pointer_rigid_body(), samples.fixed_rigid_body());
 
+    //Use ICP to find best registration transformation between rigid body and CT
+    Eigen::Transform<double, 3, Eigen::Affine> F_reg = cis::icp(d,sur);
+
     cis::PointCloud closest_points;
+    cis::PointCloud s;
+    cis::Surface surface(sur.cat_triangles(), sur.neighbor_triangles());
     for (size_t p = 0; p < d.size(); ++p) {
-        closest_points.add_point(cis::project_onto_surface_naive(d.at(p), sur));
+        s.add_point(F_reg * d.at(p));
+        closest_points.add_point(cis::project_onto_surface_kdtree(F_reg * d.at(p),surface));
+        //closest_points.add_point(cis::project_onto_surface_naive(d.at(p), sur));
     }
 
     std::ofstream o(output_file);
     if (!o.good()) throw std::invalid_argument("Error opening output file: " + output_file);
     o.setf(std::ios::fixed, std::ios::floatfield);;
     // Print output
-    o << d.size() << ',' << output_file << '\n';
-    for (size_t i = 0; i < d.size(); ++i) {
+    o << s.size() << ',' << output_file << '\n';
+    for (size_t i = 0; i < s.size(); ++i) {
         o.precision(2);
-        print_point(o, d.at(i));
+        print_point(o, s.at(i));
         o << '\t';
         print_point(o, closest_points.at(i));
         o << '\t';
         o.precision(3);
-        o << (d.at(i) - closest_points.at(i)).norm() << '\n';
+        o << (s.at(i) - closest_points.at(i)).norm() << '\n';
     }
     o.close();
 
