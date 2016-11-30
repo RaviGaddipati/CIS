@@ -80,7 +80,7 @@ void cis::Surface::load(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles
 }
 
 void cis::Surface::Division::subdivide() {
-    if (_left != nullptr && _right != nullptr) return; // Already divided
+    if (_left != nullptr || _right != nullptr) return; // Already divided
     if (_included_spheres.size() == 1) {
         // This node is a leaf node
         _middle = _included_spheres[0];
@@ -95,45 +95,83 @@ void cis::Surface::Division::subdivide() {
     });
 
     _middle = *middle;
-    _left = std::make_shared<Division>(std::vector<size_t>(_included_spheres.begin(), middle), _surface, plane);
-    _right = std::make_shared<Division>(std::vector<size_t>(middle + 1, _included_spheres.end()), _surface, plane);
+
+    if (middle - _included_spheres.begin() > 0) {
+        _left = std::make_shared<Division>(std::vector<size_t>(_included_spheres.begin(), middle), _surface, plane);
+    }
+    else {
+        _left = nullptr;
+    }
+    if (_included_spheres.end() - middle - 1 > 0) {
+        _right = std::make_shared<Division>(std::vector<size_t>(middle + 1, _included_spheres.end()), _surface, plane);
+    }
+    else {
+        _right = nullptr;
+    }
 }
 
 void cis::Surface::Division::_find_closest_impl(const cis::Point &v, double &bound, cis::Point &closest) {
+    subdivide();
     const Eigen::Vector3d scenter = _surface->_spheres.col(_middle);
-    // Leaf
-    if (size() == 0) {
-        std::cout << "Leaf" << std::endl;
-        double dist = (v - scenter).squaredNorm() - _surface->_radii.at(_middle);
+
+    double dist = (v - scenter).squaredNorm() - _surface->_radii.at(_middle);
+    if (dist <= bound) {
+        const auto &tri = at(0);
+        const auto cp = project_onto_triangle(v, tri.block<3,1>(0,0), tri.block<3,1>(3,0), tri.block<3,1>(6,0));
+        dist = (closest - v).squaredNorm();
         if (dist < bound) {
-            const auto &tri = at(0);
-            const auto cp = project_onto_triangle(v,
-                                                  tri.block<3,1>(0,0),
-                                                  tri.block<3,1>(3,0),
-                                                  tri.block<3,1>(6,0));
-            dist = (closest - v).squaredNorm();
-            if (dist < bound) {
-                bound = dist;
-                closest = cp;
-            }
+            bound = dist;
+            closest = cp;
+            std::cout << "-N-";
         }
-        return;
     }
+
 
     if (v < *this) {
-        std::cout <<"Check Left" << std::endl;
-        left()->_find_closest_impl(v, bound, closest);
-        if (v(_split_plane) - scenter(_split_plane) - _surface->max_radius() < bound) {
-            right()->_find_closest_impl(v, bound, closest);
+        if (_left) {
+            std::cout << "\\L";
+            _left->_find_closest_impl(v, bound, closest);
+            std::cout << "/";
+        }
+        if (_right && v(_split_plane) - scenter(_split_plane) - _surface->_max_radius < bound) {
+            std::cout << "\\R";
+            _right->_find_closest_impl(v, bound, closest);
+            std::cout << "/";
         }
     } else {
-        std::cout <<"Check Right" << std::endl;
-        right()->_find_closest_impl(v, bound, closest);
-        if (v(_split_plane) - scenter(_split_plane) - _surface->max_radius() < bound) {
-            left()->_find_closest_impl(v, bound, closest);
+        if (_right) {
+            std::cout << "\\R";
+            right()->_find_closest_impl(v, bound, closest);
+            std::cout << "/";
+        }
+        if (_left && v(_split_plane) - scenter(_split_plane) - _surface->_max_radius < bound) {
+            std::cout << "\\L";
+            _left->_find_closest_impl(v, bound, closest);
+            std::cout << "/";
         }
     }
 
+}
+
+std::string cis::Surface::Division::to_string(int level) {
+    std::string ret = "";
+    for (int i = 0; i < level; ++i) {
+        ret += '\t';
+    }
+    ret += std::to_string(value()(0)) + "," +
+           std::to_string(value()(1)) + "," +
+           std::to_string(value()(2)) + "\n";
+    if (_left) ret += _left->to_string(level + 1);
+    if (_right) ret += _right->to_string(level + 1);
+    return ret;
+}
+
+cis::Point cis::Surface::Division::find_closest_point(const cis::Point &v) {
+    Point ret;
+    double bnd = std::numeric_limits<double>::max();
+    std::cout << "\n\n";
+    _find_closest_impl(v, bnd, ret);
+    return ret;
 }
 
 bool cis::operator<(const cis::Point &p, cis::Surface::Division &d) {
@@ -182,6 +220,15 @@ cis::Point cis::project_onto_triangle(const cis::Point &p,
     // Lies on opposite side of v3
     assert(b2 <= 0 && "Default case should always be true if previous projections are not");
     return project_onto_segment(p, v1, v2);
+}
+
+std::ostream &cis::operator<<(std::ostream &os, cis::Surface::Division &d) {
+    os << d.to_string();
+    return os;
+}
+
+std::ostream &cis::operator<<(std::ostream &os, std::shared_ptr<cis::Surface::Division> d) {
+    return os << *d;
 }
 
 TEST_CASE("Surface tree") {
@@ -233,52 +280,71 @@ TEST_CASE("Surface tree") {
             std::shared_ptr<cis::Surface::Division> curr = q.back();
             q.pop_back();
             if (curr->size() > 1) {
-                CHECK(curr->left()->size() + curr->right()->size() == curr->size() - 1);
-                q.push_back(curr->left());
-                q.push_back(curr->right());
+                int size = 0;
+                if (curr->left()) {
+                    size += curr->left()->size();
+                    q.push_back(curr->left());
+                }
+                if (curr->right()) {
+                    size += curr->right()->size();
+                    q.push_back(curr->right());
+                }
+                CHECK(size == curr->size() - 1);
             }
         }
     }
 
     SUBCASE("Closest Point") {
         //Generate random points with x >= 1, 1 >= y > 0, 2 >= z >= 0 (project onto face of prism)
-        std::default_random_engine generator (rand() % 10);
+        std::default_random_engine generator(rand() % 10);
 
-        std::uniform_real_distribution<double> range_distribution (1.0,20.0);
-        std::uniform_real_distribution<double> step_distribution (0.0,1.0);
-        std::uniform_real_distribution<double> z_distribution (0.0,2.0);
+        std::uniform_real_distribution<double> range_distribution(1.0,20.0);
+        std::uniform_real_distribution<double> step_distribution(0.0,1.0);
+        std::uniform_real_distribution<double> z_distribution(0.0,2.0);
         cis::PointCloud pc1;
+
         for (int j = 0; j < 5; j++) {
-            cis::Point toAdd = {range_distribution(generator), step_distribution(generator), z_distribution(generator) };
+            cis::Point toAdd = {range_distribution(generator), step_distribution(generator), z_distribution(generator)};
             pc1.add_point(toAdd);
         }
 
         //Generate random points with 1 >= x >= 0 , y >= 1, 2 >= z >= 0 (project onto another face of prism
         cis::PointCloud pc2;
         for (int j = 0; j < 5; j++) {
-            cis::Point toAdd = {step_distribution(generator), range_distribution(generator), z_distribution(generator) };
+            cis::Point toAdd = {step_distribution(generator), range_distribution(generator), z_distribution(generator)};
             pc2.add_point(toAdd);
         }
 
         //Generate random point x >=1, y >=1, 2 >= z >= 0 (project onto an edge of the prism
         cis::PointCloud pc3;
         for (int j = 0; j < 5; j++) {
-            cis::Point toAdd = {range_distribution(generator), range_distribution(generator), z_distribution(generator) };
+            cis::Point toAdd = {range_distribution(generator), range_distribution(generator), z_distribution(generator)};
             pc3.add_point(toAdd);
         }
 
         //For each of the test point clouds, check to confirm that the expected closest point is determined
         //pc1 : in the form (1,y,z)
         for (size_t i = 0; i < pc1.size(); i++ ) {
-            //std::cout << pc1.at(i) << std::endl;
-            std::cout << s.root().get()->find_closest_point(pc1.at(i)) << "\n----\n" << std::endl ;
+            const auto c = s.root()->find_closest_point(pc1.at(i));
+            CHECK(c(0) == 1);
         }
-        CHECK(true);
 
         //pc2: in the form (x,1,z)
-
+        for (size_t i = 0; i < pc2.size(); i++ ) {
+            const auto c = s.root()->find_closest_point(pc2.at(i));
+            CHECK(c(1) == 1);
+        }
 
         //pc3: in the form (1,1,z)
+        for (size_t i = 0; i < pc3.size(); i++ ) {
+            std::cerr << pc3.at(i) << "\n";
+            const auto c = s.root()->find_closest_point(pc3.at(i));
+            std::cerr << c << "\n\n";
+            CHECK(c(0) == 1);
+            CHECK(c(1) == 1);
+            if (c(1) != 1) std::cout << s.root();
+            s.root()->find_closest_point(pc3.at(i));
+        }
 
 
     }

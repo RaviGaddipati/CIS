@@ -97,12 +97,9 @@ namespace cis {
                 return _split_plane;
             }
 
-            Point find_closest_point(const Point &v) {
-                Point ret;
-                double bnd = std::numeric_limits<double>::max();
-                _find_closest_impl(v, bnd, ret);
-                return ret;
-            }
+            Point find_closest_point(const Point &v);
+
+            std::string to_string(int level=0);
 
         protected:
             std::vector<size_t> _included_spheres; /**< Index of sphere in _spheres, _triangles to include */
@@ -219,6 +216,8 @@ namespace cis {
      */
     bool operator<(const Point &p, Surface::Division &d);
     bool operator<(const Point &p, std::shared_ptr<Surface::Division> d);
+    std::ostream &operator<<(std::ostream &os, Surface::Division &d);
+    std::ostream &operator<<(std::ostream &os, std::shared_ptr<Surface::Division> d);
 
     /**
      * @brief
