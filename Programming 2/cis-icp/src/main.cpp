@@ -113,7 +113,11 @@ void find_closest(const int argc, const char *argv[]) {
     cis::Surface surface(sur.cat_triangles(), sur.neighbor_triangles());
     for (size_t p = 0; p < d.size(); ++p) {
         s.add_point(F_reg * d.at(p));
+        #ifdef CIS_ICP_USE_NAIVE
+        closest_points.add_point(cis::project_onto_surface_naive(F_reg * d.at(p), sur));
+        #else
         closest_points.add_point(cis::project_onto_surface_kdtree(F_reg * d.at(p), surface));
+        #endif
         /**
          * PA3
          * closest_points.add_point(cis::project_onto_surface_naive(d.at(p), sur));
@@ -144,6 +148,7 @@ void find_closest(const int argc, const char *argv[]) {
 }
 
 int main(const int argc, const char *argv[]) {
+    srand(time(0));
     // Run test cases
     if (argc > 1 && !strcmp(argv[1], "test")) {
         doctest::Context doc(argc, argv);

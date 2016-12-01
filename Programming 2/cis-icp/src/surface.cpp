@@ -88,11 +88,6 @@ void cis::Surface::load(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles
 
 void cis::Surface::Division::subdivide() {
     if (_left != nullptr || _right != nullptr) return; // Already divided
-    if (_included_spheres.size() == 1) {
-        // This node is a leaf node
-        _middle = _included_spheres[0];
-        return;
-    }
 
     const int plane = (_split_plane + 1) % 3;
     const auto middle = _included_spheres.begin() + _included_spheres.size()/2;
@@ -119,8 +114,8 @@ void cis::Surface::Division::subdivide() {
 
 void cis::Surface::Division::_find_closest_impl(const cis::Point &v, double &bound, cis::Point &closest) {
     subdivide();
-    const Eigen::Vector3d scenter = _surface->_spheres.col(_middle);
 
+    const Eigen::Vector3d scenter = _surface->_spheres.col(_middle);
     double dist = (v - scenter).norm() - _surface->_radii.at(_middle);
     if (dist < bound) {
         const auto &tri = _surface->_triangles.col(_middle);
@@ -132,23 +127,21 @@ void cis::Surface::Division::_find_closest_impl(const cis::Point &v, double &bou
         }
     }
 
-
     if (v < *this) {
         if (_left) {
             _left->_find_closest_impl(v, bound, closest);
         }
-        if (_right && v(_split_plane) - scenter(_split_plane) - _surface->_max_radius < bound) {
+        if (_right && v(_split_plane) + bound + _surface->_max_radius >= scenter(_split_plane)) {
             _right->_find_closest_impl(v, bound, closest);
         }
     } else {
         if (_right) {
             right()->_find_closest_impl(v, bound, closest);
         }
-        if (_left && v(_split_plane) - scenter(_split_plane) - _surface->_max_radius < bound) {
+        if (_left && v(_split_plane) - bound - _surface->_max_radius <= scenter(_split_plane)) {
             _left->_find_closest_impl(v, bound, closest);
         }
     }
-
 }
 
 std::string cis::Surface::Division::to_string(int level) {
@@ -293,7 +286,7 @@ TEST_CASE("Surface tree") {
 
     SUBCASE("Closest Point") {
         //Generate random points with x >= 1, 1 >= y > 0, 2 >= z >= 0 (project onto face of prism)
-        std::default_random_engine generator(rand() % 10);
+        std::default_random_engine generator;
 
         std::uniform_real_distribution<double> range_distribution(1.0,20.0);
         std::uniform_real_distribution<double> step_distribution(0.0,1.0);
@@ -322,21 +315,28 @@ TEST_CASE("Surface tree") {
         //For each of the test point clouds, check to confirm that the expected closest point is determined
         //pc1 : in the form (1,y,z)
         for (size_t i = 0; i < pc1.size(); i++ ) {
-            const auto c = s.root()->find_closest_point(pc1.at(i));
+            auto c = s.root()->find_closest_point(pc1.at(i));
             CHECK(c(0) == 1);
+            c(0) = pc1.at(i)(0);
+            CHECK(c.isApprox(pc1.at(i)));
         }
 
         //pc2: in the form (x,1,z)
         for (size_t i = 0; i < pc2.size(); i++ ) {
-            const auto c = s.root()->find_closest_point(pc2.at(i));
+            auto c = s.root()->find_closest_point(pc2.at(i));
             CHECK(c(1) == 1);
+            c(1) = pc2.at(i)(1);
+            CHECK(c.isApprox(pc2.at(i)));
         }
 
         //pc3: in the form (1,1,z)
         for (size_t i = 0; i < pc3.size(); i++ ) {
-            const auto c = s.root()->find_closest_point(pc3.at(i));
+            auto c = s.root()->find_closest_point(pc3.at(i));
             CHECK(c(0) == 1);
             CHECK(c(1) == 1);
+            c(0) = pc3.at(i)(0);
+            c(1) = pc3.at(i)(1);
+            CHECK(c.isApprox(pc3.at(i)));
         }
 
 

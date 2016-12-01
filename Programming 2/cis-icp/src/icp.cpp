@@ -11,6 +11,7 @@
 
 #include <surface.h>
 #include <horn.h>
+#include <queue>
 #include "icp.h"
 #include "doctest.h"
 
@@ -39,74 +40,74 @@ Eigen::Transform<double, 3, Eigen::Affine> cis::icp(const PointCloud &q, const S
     cis::Surface surface(surfaceFile.cat_triangles(), surfaceFile.neighbor_triangles());
 
     //Initialize all relevant parameters
-    double eta = std::numeric_limits<double>::max(); //Generous initial bound
-    double gamma = 0.99999; //Threshold for the terminating condition
-    std::vector<double> sigma;
-    std::vector<double> mean_error;
+    double eta = 200; //Generous initial bound
+    double gamma = 0.999; //Threshold for the terminating condition
 
-    //Initialize the registration transformation as just an identity matrix
-    Eigen::Transform<double, 3, Eigen::Affine> F_reg(
-    Eigen::Translation<double, 3>(-100, 100, 50) *
-    Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitZ()) *
-    Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitY()) *
-    Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitX())
-    );
+        //Initialize the registration transformation as just an identity matrix
+        Eigen::Transform<double, 3, Eigen::Affine> F_reg(
+        Eigen::Translation<double, 3>(q.centroid())
+        );
 
-    //Hold whether terminating condition is satisfied
-    bool term = false;
+        //Hold whether terminating condition is satisfied
+        bool term = false;
 
-    std::vector<Point> A_pts, B_pts;
-    cis::Point c_k, d, e, Fq;
-    double sig, mean;
+        std::vector<Point> A_pts, B_pts;
+        cis::Point c_k, d, e, Fq;
+        double sig, mean;
 
-    while (!term) {
-        cis::PointCloud A, B;
-        A_pts.clear();
-        B_pts.clear();
+        std::queue<double> err;
+        for (size_t i = 0; i < 5; ++i) err.push(std::numeric_limits<double>::max());
 
-        for (size_t p = 0; p < q.size(); ++p) {
-            //Use project_onto_surface_kd given F_reg
+        while (!term) {
+            cis::PointCloud A, B;
+            A_pts.clear();
+            B_pts.clear();
 
-            Fq = F_reg * q.at(p);
-            #ifdef CIS_ICP_USE_NAIVE
-            c_k = project_onto_surface_naive(Fq, surfaceFile);
-            #else
-            c_k = surface.root()->find_closest_point(Fq);
-            #endif
+            for (size_t p = 0; p < q.size(); ++p) {
+                //Use project_onto_surface_kd given F_reg
 
-            d = c_k - Fq;
+                Fq = F_reg * q.at(p);
+                #ifdef CIS_ICP_USE_NAIVE
+                c_k = project_onto_surface_naive(Fq, surfaceFile);
+                #else
+                c_k = surface.root()->find_closest_point(Fq);
+                #endif
 
-            //If valid pair, add to the clouds above
-            if (d.norm() < eta) {
-                A_pts.push_back(q.at(p));
-                B_pts.push_back(c_k);
+
+
+                d = c_k - Fq;
+
+                //If valid pair, add to the clouds above
+                if (d.norm() < eta) {
+                    A_pts.push_back(q.at(p));
+                    B_pts.push_back(c_k);
+                }
             }
-        }
 
-        A.add_points(A_pts);
-        B.add_points(B_pts);
+            A.add_points(A_pts);
+            B.add_points(B_pts);
 
-        //Use Horn method to find new best transformation from A to B
-        F_reg = cloud_to_cloud(A,B);
+            //Use Horn method to find new best transformation from A to B
+            F_reg = cloud_to_cloud(A, B);
 
-        //Determine error and update eta
-        sig = 0;
-        mean = 0;
-        for (size_t i = 0; i < A.size(); i++) {
-            e = B.at(i) - F_reg * A.at(i);
-            sig = sig + e.squaredNorm();
-            mean = mean + e.norm();
-        }
-        sigma.push_back(sqrt(sig)/A.size());
-        mean_error.push_back(mean/A.size());
+            //Determine error and update eta
+            sig = 0;
+            mean = 0;
+            for (size_t i = 0; i < A.size(); i++) {
+                e = B.at(i) - F_reg * A.at(i);
+                sig = sig + e.squaredNorm();
+                mean = mean + e.norm();
+            }
+            //  sigma.push_back(sqrt(sig)/A.size());
+            err.push(mean / A.size());
 
-        eta = 3 * eta; //Maybe this is the last element? May have to confirm
-        //if termination condition is met, update term
-        if (mean_error.size() > 2 && mean_error.back() < 5) {
-            const double crit = mean_error.back() / mean_error.at(mean_error.size() - 2);
+            eta = 8 * err.back(); //Maybe this is the last element? May have to confirm
+            //if termination condition is met, update term
+            const double crit = err.back() / err.front();
+            err.pop();
             term = (gamma <= crit && crit <= 1);
         }
-    }
+
 
     return F_reg;
 }
@@ -243,6 +244,7 @@ TEST_CASE("Project To Surface") {
     }
 
     cis::SurfaceFile bs(tmpfile);
+    cis::Surface sur(bs.cat_triangles(), bs.neighbor_triangles());
     REQUIRE(bs.triangles().rows() == 3);
     REQUIRE(bs.vertices().size() == 7);
 
@@ -253,36 +255,43 @@ TEST_CASE("Project To Surface") {
     expect << 1,1,0;
     prj = cis::project_onto_surface_naive(p, bs);
     CHECK(prj == expect);
+    CHECK(prj == sur.root()->find_closest_point(p));
 
     p << 0.5,1,1;
     expect << 0,1,1;
     prj = cis::project_onto_surface_naive(p, bs);
     CHECK(prj == expect);
+    CHECK(prj == sur.root()->find_closest_point(p));
 
     p << 1,0.5,1;
     expect << 1,0,1;
     prj = cis::project_onto_surface_naive(p, bs);
     CHECK(prj == expect);
+    CHECK(prj == sur.root()->find_closest_point(p));
 
     p << -1,-1,-1;
     expect << 0,0,0;
     prj = cis::project_onto_surface_naive(p, bs);
     CHECK(prj == expect);
+    CHECK(prj == sur.root()->find_closest_point(p));
 
     p << 4,0,0;
     expect << 03,0,0;
     prj = cis::project_onto_surface_naive(p, bs);
     CHECK(prj == expect);
+    CHECK(prj == sur.root()->find_closest_point(p));
 
     p << 0,4,0;
     expect << 0,3,0;
     prj = cis::project_onto_surface_naive(p, bs);
     CHECK(prj == expect);
+    CHECK(prj == sur.root()->find_closest_point(p));
 
     p << 0,0,4;
     expect << 0,0,3;
     prj = cis::project_onto_surface_naive(p, bs);
     CHECK(prj == expect);
+    CHECK(prj == sur.root()->find_closest_point(p));
 
     remove(tmpfile.c_str());
 }
