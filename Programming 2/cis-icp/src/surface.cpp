@@ -93,7 +93,7 @@ void cis::Surface::Division::subdivide() {
     auto middle = _included_spheres.begin() + _included_spheres.size()/2;
     std::nth_element(_included_spheres.begin(), middle, _included_spheres.end(), cmp);
     // Make sure all ties go to the left
-    middle = std::upper_bound(_included_spheres.begin(), _included_spheres.end(), *middle, cmp) - 1;
+    middle = std::upper_bound(middle, _included_spheres.end(), *middle, cmp) - 1;
     _middle = middle[0];
 
     const int plane = (_split_plane + 1) % 3;
