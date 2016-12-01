@@ -146,9 +146,7 @@ namespace cis {
          * @param triangles Array in which each col is XYZ of each vertex
          * @param neighbors Neighboring triangle indicies
          */
-        Surface(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles,
-                const Eigen::Array<long, Eigen::Dynamic, 3> &neighbors) :
-        _triangles(triangles), _neighbors(neighbors) {
+        Surface(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles) :_triangles(triangles) {
             build();
         }
 
@@ -164,8 +162,7 @@ namespace cis {
          * @param triangles
          * @param neighbors
          */
-        void load(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles,
-                  const Eigen::Array<long, 3, Eigen::Dynamic> &neighbors);
+        void load(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles);
 
         /**
          * @return Root kd-tree node ptr
@@ -203,7 +200,6 @@ namespace cis {
         std::vector<double> _radii;
         // Each col is X,Y,Z of each vertex
         Eigen::Array<double, 9, Eigen::Dynamic> _triangles;
-        Eigen::Array<long, Eigen::Dynamic, 3> _neighbors;
         std::shared_ptr<Division> _root;
         double _max_radius; // Maximum bounding sphere radius
         friend class Division;

@@ -64,8 +64,6 @@ cis::Surface::_bounding_sphere(const Eigen::Matrix<double, 9,Eigen::Dynamic> &tr
 }
 
 void cis::Surface::build() {
-    assert(_neighbors.rows() == _triangles.cols());
-
     _max_radius = 0;
 
     _spheres.resize(Eigen::NoChange, _triangles.cols());
@@ -79,10 +77,8 @@ void cis::Surface::build() {
     _root = std::make_shared<Division>(all, this);
 }
 
-void cis::Surface::load(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles,
-                        const Eigen::Array<long, 3, Eigen::Dynamic> &neighbors) {
+void cis::Surface::load(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles) {
     _triangles = triangles;
-    _neighbors = neighbors;
     build();
 }
 

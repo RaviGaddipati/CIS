@@ -98,7 +98,8 @@ void cis::SurfaceFile::open(std::istream &in) {
         this->_tri.row(i) = ind[i];
         this->_neighbor.row(i) = neigh[i];
     }
-    sur = Surface(cat_triangles(), neighbor_triangles());
+    const auto ct = cat_triangles();
+    sur.load(ct);
 }
 
 Eigen::Array<double, 9, Eigen::Dynamic> cis::SurfaceFile::cat_triangles() const {
@@ -275,7 +276,7 @@ TEST_CASE("Surface tree") {
     }
 
     cis::SurfaceFile f(tmpfile);
-    cis::Surface s(f.cat_triangles(), f.neighbor_triangles());
+    cis::Surface s(f.cat_triangles());
 
     SUBCASE("Centroids") {
         const std::vector<Eigen::Vector3d> pts = {{1,0.5,1}, {0.5,0.5,2}, {0.5,0,1}, {0.5,0.5,0}, {0.5,1,1},{0, 0.5,1}};

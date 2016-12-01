@@ -37,11 +37,11 @@ cis::Point cis::project_onto_surface_naive(const Point &p, const SurfaceFile &su
 
 Eigen::Transform<double, 3, Eigen::Affine> cis::icp(const PointCloud &q, SurfaceFile &surfaceFile) {
     //Generate the root surface to match to
-    cis::Surface surface = surfaceFile.surface();
+    cis::Surface &surface = surfaceFile.surface();
 
     //Initialize all relevant parameters
     double eta = 200; //Generous initial bound
-    double gamma = 0.96; //Threshold for the terminating condition
+    double gamma = 0.98; //Threshold for the terminating condition
 
         //Initialize the registration transformation as just an identity matrix
         Eigen::Transform<double, 3, Eigen::Affine> F_reg(
@@ -244,7 +244,7 @@ TEST_CASE("Project To Surface") {
     }
 
     cis::SurfaceFile bs(tmpfile);
-    cis::Surface sur(bs.cat_triangles(), bs.neighbor_triangles());
+    cis::Surface sur(bs.cat_triangles());
     REQUIRE(bs.triangles().rows() == 3);
     REQUIRE(bs.vertices().size() == 7);
 
