@@ -15,6 +15,7 @@
 #include <string>
 #include <fstream>
 #include "pointcloud.h"
+#include "surface.h"
 
 
 namespace cis {
@@ -143,9 +144,15 @@ namespace cis {
             return this->_neighbor;
         }
 
+        /**
+         * @return kd-tree of surface
+         */
+         Surface &surface() { return sur; }
+
 
     private:
         Eigen::Array<long, Eigen::Dynamic, 3> _tri, _neighbor;
+        Surface sur;
 
     };
 
@@ -187,103 +194,6 @@ namespace cis {
         size_t N_a;
         size_t N_b;
     };
-}
-
-/*************** TEST CASES ***************/
-
-TEST_CASE("Rigid Body File") {
-    const std::string tmpfile = "cis-icp-doctest.tmp";
-    {
-        std::ofstream o(tmpfile);
-        o << "6 Problem4-BodyB.txt\n"
-          <<    "    -8.161    -30.321    -80.776\n"
-          <<    "    13.074      6.228    -44.869\n"
-          <<    "    24.232      1.885   -103.562\n"
-          <<    "    10.774     -5.880    -60.917\n"
-          <<    "    28.722     18.354    -91.628\n"
-          <<    "   -31.677     16.526    -87.024\n"
-          <<    "     0.000      0.000      0.000\n";
-    }
-
-            SUBCASE("File wrapper") {
-        cis::RigidBody rb(tmpfile);
-        const std::vector<cis::Point> pts = {{-8.161, -30.321, -80.776}, {-31.677, 16.526, -87.024}, {0,0,0}};
-                CHECK(rb.markers().at(0).isApprox(pts.at(0)));
-                CHECK(rb.markers().at(rb.markers().size() - 1).isApprox(pts.at(1)));
-                CHECK(rb.tip().isApprox(pts.at(2)));
-    }
-
-    remove(tmpfile.c_str());
-}
-
-TEST_CASE("Surface File") {
-    const std::string tmpfile = "cis-icp-doctest.tmp";
-    {
-        std::ofstream o(tmpfile);
-        o << "2\n"
-          << "-1 0 1\n"
-          << "-2 0 2\n"
-          << "2\n"
-          << "0 0 1 -1 -1 -1\n"
-          << "0 0 0 -2 -2 -2\n";
-    }
-
-            SUBCASE("File wrapper") {
-        cis::SurfaceFile rb(tmpfile);
-        const cis::Point p = {-1, 0, 1};
-        const Eigen::Array<long,1,3> a = {0,0,0}, b = {-2,-2,-2}, c = ((rb.neighbor_triangles().row(1)));
-                CHECK(rb.vertices().at(0) == p);
-                CHECK(((rb.triangles().row(rb.triangles().rows() - 1).matrix()) == a.matrix()) == true);
-        bool h = (c.matrix() == b.matrix());
-                CHECK(h);
-    }
-
-    remove(tmpfile.c_str());
-}
-
-TEST_CASE("SampleReadings File") {
-    const std::string tmpfile = "cis-icp-doctest.tmp";
-    {
-        std::ofstream o(tmpfile);
-        o << "3, 2, PA3-A-Debug-SampleReadingsTest.txt 0\n"
-          << "-81.34,   -43.04,   117.06\n"
-          << "-35.48,    -2.92,    63.39\n"
-          << "-76.64,    11.69,   109.42\n"
-          << "12.12,   -17.85,    93.44\n"
-          << "1.75,   -52.74,    46.84\n"
-          << "-28.38,    10.92,    42.26\n";
-    }
-
-    SUBCASE("File wrapper") {
-        cis::SampleReadings sr(tmpfile, 1, 1);
-        const std::vector<cis::Point> pts = {{-81.34, -43.04, 117.06},
-                                             {-35.48, -2.92,  63.39},
-                                             {-76.64, 11.69,  109.42},
-                                             {12.12,  -17.85, 93.44},
-                                             {1.75,   -52.74, 46.84},
-                                             {-28.38, 10.92,  42.26}};
-
-        CHECK( sr.pointer_rigid_body().size() == 2);
-        CHECK(sr.fixed_rigid_body().size() == 2);
-
-        auto test_pointer = sr.pointer_rigid_body().at(0);
-        CHECK(test_pointer.at(0) == pts.at(0));
-        CHECK_THROWS(test_pointer.at(1));
-        test_pointer = sr.pointer_rigid_body().at(1);
-        CHECK(test_pointer.at(0) == pts.at(3));
-        CHECK_THROWS(test_pointer.at(1));
-
-        auto test_fixed = sr.fixed_rigid_body().at(0);
-        CHECK(test_fixed.at(0) == pts.at(1));
-        CHECK_THROWS(test_fixed.at(1));
-        test_fixed = sr.fixed_rigid_body().at(1);
-        CHECK(test_fixed.at(0) == pts.at(4));
-        CHECK_THROWS(test_fixed.at(1));
-
-
-    }
-
-    remove(tmpfile.c_str());
 }
 
 

@@ -16,7 +16,7 @@
 #include <fstream>
 #include <iostream>
 #include "Eigen"
-#include "files.h"
+#include "pointcloud.h"
 
 namespace cis {
 
@@ -121,12 +121,12 @@ namespace cis {
              * @param level
              * @return multi-line string tree repersentation
              */
-            std::string to_string(int level=0);
+            std::string to_string(int level=0, bool ax=false);
 
         protected:
             std::vector<size_t> _included_spheres; /**< Index of sphere in _spheres, _triangles to include */
             size_t _middle; // Index of split point in _surface->_spheres
-            std::shared_ptr<Division> _left, _right;
+            std::shared_ptr<Division> _left = nullptr, _right = nullptr;
             const Surface * _surface;
             const int _split_plane;
 
@@ -236,8 +236,8 @@ namespace cis {
      * @param d Surface to search
      * @return true if p is less than d in the split dimension of the node.
      */
-    bool operator<(const Point &p, Surface::Division &d);
-    bool operator<(const Point &p, std::shared_ptr<Surface::Division> d);
+    bool operator<=(const Point &p, Surface::Division &d);
+    bool operator<=(const Point &p, std::shared_ptr<Surface::Division> d);
 
     /**
      * @brief

@@ -9,8 +9,8 @@
  * @file
  */
 
-#include <surface.h>
-#include <horn.h>
+#include "files.h"
+#include "horn.h"
 #include <queue>
 #include "icp.h"
 #include "doctest.h"
@@ -35,13 +35,13 @@ cis::Point cis::project_onto_surface_naive(const Point &p, const SurfaceFile &su
 }
 
 
-Eigen::Transform<double, 3, Eigen::Affine> cis::icp(const PointCloud &q, const SurfaceFile &surfaceFile) {
+Eigen::Transform<double, 3, Eigen::Affine> cis::icp(const PointCloud &q, SurfaceFile &surfaceFile) {
     //Generate the root surface to match to
-    cis::Surface surface(surfaceFile.cat_triangles(), surfaceFile.neighbor_triangles());
+    cis::Surface surface = surfaceFile.surface();
 
     //Initialize all relevant parameters
     double eta = 200; //Generous initial bound
-    double gamma = 0.999; //Threshold for the terminating condition
+    double gamma = 0.96; //Threshold for the terminating condition
 
         //Initialize the registration transformation as just an identity matrix
         Eigen::Transform<double, 3, Eigen::Affine> F_reg(

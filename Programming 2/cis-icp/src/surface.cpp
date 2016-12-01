@@ -56,9 +56,9 @@ cis::Surface::_bounding_sphere(const Eigen::Matrix<double, 9,Eigen::Dynamic> &tr
     u = a - ret;
     v = c - ret;
     d = (u.cross(v)).cross(u);
-    g = (v.norm() - u.norm()) / (d * 2).dot(v - u);
+    g = (v.squaredNorm() - u.squaredNorm()) / (d * 2).dot(v - u);
 
-    if (g > 0 && std::isfinite(g)) ret += g * d;
+    if (g > 0) ret += g * d;
     if (radius != nullptr) *radius = (ret - a).norm();
     return ret;
 }
@@ -76,7 +76,7 @@ void cis::Surface::build() {
     }
     std::vector<size_t> all(_spheres.cols());
     std::iota(all.begin(), all.end(), 0);
-    _root = std::make_shared<Division>(all ,this);
+    _root = std::make_shared<Division>(all, this);
 }
 
 void cis::Surface::load(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles,
@@ -87,28 +87,25 @@ void cis::Surface::load(const Eigen::Array<double, 9, Eigen::Dynamic> &triangles
 }
 
 void cis::Surface::Division::subdivide() {
-    if (_left != nullptr || _right != nullptr) return; // Already divided
+    if (_left != nullptr || _right != nullptr || _included_spheres.size() == 0) return; // Already divided
+
+    const auto cmp = [this](size_t a, size_t b)
+    {
+        return _surface->_spheres.col(a)(_split_plane) < _surface->_spheres.col(b)(_split_plane);
+    };
+
+    auto middle = _included_spheres.begin() + _included_spheres.size()/2;
+    std::nth_element(_included_spheres.begin(), middle, _included_spheres.end(), cmp);
+    // Make sure all ties go to the left
+    middle = std::upper_bound(_included_spheres.begin(), _included_spheres.end(), *middle, cmp) - 1;
+    _middle = middle[0];
 
     const int plane = (_split_plane + 1) % 3;
-    const auto middle = _included_spheres.begin() + _included_spheres.size()/2;
-    std::nth_element(_included_spheres.begin(), middle, _included_spheres.end(), [this, plane](size_t a, size_t b)
-    {
-        return _surface->sphere_centroid(a)(plane) < _surface->sphere_centroid(b)(plane);
-    });
-
-    _middle = *middle;
-
     if (middle - _included_spheres.begin() > 0) {
         _left = std::make_shared<Division>(std::vector<size_t>(_included_spheres.begin(), middle), _surface, plane);
     }
-    else {
-        _left = nullptr;
-    }
     if (_included_spheres.end() - middle - 1 > 0) {
         _right = std::make_shared<Division>(std::vector<size_t>(middle + 1, _included_spheres.end()), _surface, plane);
-    }
-    else {
-        _right = nullptr;
     }
 }
 
@@ -116,6 +113,23 @@ void cis::Surface::Division::_find_closest_impl(const cis::Point &v, double &bou
     subdivide();
 
     const Eigen::Vector3d scenter = _surface->_spheres.col(_middle);
+
+    if (v <= *this) {
+        if (_left) {
+            _left->_find_closest_impl(v, bound, closest);
+        }
+        if (_right && (v(_split_plane) + bound + _surface->_max_radius >= scenter(_split_plane))) {
+            _right->_find_closest_impl(v, bound, closest);
+        }
+    } else {
+        if (_right) {
+            _right->_find_closest_impl(v, bound, closest);
+        }
+        if (_left && (v(_split_plane) - bound - _surface->_max_radius <= scenter(_split_plane))) {
+            _left->_find_closest_impl(v, bound, closest);
+        }
+    }
+
     double dist = (v - scenter).norm() - _surface->_radii.at(_middle);
     if (dist < bound) {
         const auto &tri = _surface->_triangles.col(_middle);
@@ -126,34 +140,22 @@ void cis::Surface::Division::_find_closest_impl(const cis::Point &v, double &bou
             closest = cp;
         }
     }
-
-    if (v < *this) {
-        if (_left) {
-            _left->_find_closest_impl(v, bound, closest);
-        }
-        if (_right && v(_split_plane) + bound + _surface->_max_radius >= scenter(_split_plane)) {
-            _right->_find_closest_impl(v, bound, closest);
-        }
-    } else {
-        if (_right) {
-            right()->_find_closest_impl(v, bound, closest);
-        }
-        if (_left && v(_split_plane) - bound - _surface->_max_radius <= scenter(_split_plane)) {
-            _left->_find_closest_impl(v, bound, closest);
-        }
-    }
 }
 
-std::string cis::Surface::Division::to_string(int level) {
+std::string cis::Surface::Division::to_string(int level, bool ax) {
+    subdivide();
     std::string ret = "";
     for (int i = 0; i < level; ++i) {
         ret += '\t';
     }
-    ret += std::to_string(value()(0)) + "," +
-           std::to_string(value()(1)) + "," +
-           std::to_string(value()(2)) + "\n";
-    if (_left) ret += _left->to_string(level + 1);
-    if (_right) ret += _right->to_string(level + 1);
+    if (ax) ret += std::to_string(_split_plane) + "\n";
+    else {
+        ret += std::to_string(_split_plane) + "|" + std::to_string(value()(0)) + "," +
+               std::to_string(value()(1)) + "," +
+               std::to_string(value()(2)) + "\n";
+    }
+    if (_left) ret += _left->to_string(level + 1, ax);
+    if (_right) ret += _right->to_string(level + 1, ax);
     return ret;
 }
 
@@ -164,12 +166,12 @@ cis::Point cis::Surface::Division::find_closest_point(const cis::Point &v) {
     return ret;
 }
 
-bool cis::operator<(const cis::Point &p, cis::Surface::Division &d) {
-    return p(d.split_plane()) < d.value()(d.split_plane());
+bool cis::operator<=(const cis::Point &p, cis::Surface::Division &d) {
+    return p(d.split_plane()) <= d.value()(d.split_plane());
 }
 
-bool cis::operator<(const cis::Point &p, std::shared_ptr<cis::Surface::Division> d) {
-    return p < *d;
+bool cis::operator<=(const cis::Point &p, std::shared_ptr<cis::Surface::Division> d) {
+    return p <= *d;
 }
 
 cis::Point cis::project_onto_segment(const cis::Point &c, const cis::Point &p, const cis::Point &q) {
@@ -219,129 +221,4 @@ std::ostream &cis::operator<<(std::ostream &os, cis::Surface::Division &d) {
 
 std::ostream &cis::operator<<(std::ostream &os, std::shared_ptr<cis::Surface::Division> d) {
     return os << *d;
-}
-
-TEST_CASE("Surface tree") {
-    /**
-     * The test case defines a cube, where each face is split into two triangles. This allows for the
-     * testing of bounding sphere centroids that lie on the median split plane.
-     */
-    const std::string tmpfile = "cis-icp-doctest.tmp";
-    {
-        std::ofstream o(tmpfile);
-        o << "8\n"
-          << "0 0 0\n"
-          << "1 1 0\n"
-          << "0 1 0\n"
-          << "0 0 2\n"
-          << "0 1 2\n"
-          << "1 1 2\n"
-          << "1 0 2\n"
-          << "1 0 0\n"
-          << "12\n"
-          << "7 5 6 -1 -1 -1\n"
-          << "7 1 5 -1 -1 -1\n"
-          << "4 3 6 -1 -1 -1\n"
-          << "4 5 6 -1 -1 -1\n"
-          << "0 3 6 -1 -1 -1\n"
-          << "7 0 6 -1 -1 -1\n"
-          << "7 0 2 -1 -1 -1\n"
-          << "7 2 1 -1 -1 -1\n"
-          << "1 2 5 -1 -1 -1\n"
-          << "5 2 4 -1 -1 -1\n"
-          << "0 2 4 -1 -1 -1\n"
-          << "0 4 3 -1 -1 -1\n";
-    }
-
-    cis::SurfaceFile f(tmpfile);
-    cis::Surface s(f.cat_triangles(), f.neighbor_triangles());
-
-    SUBCASE("Centroids") {
-        const std::vector<Eigen::Vector3d> pts = {{1,0.5,1}, {0.5,0.5,2}, {0.5,0,1}, {0.5,0.5,0}, {0.5,1,1},{0, 0.5,1}};
-        for (size_t i = 0; i < s.root()->size(); ++i) {
-            CHECK(s.sphere_centroid(i) == pts.at(i/2));
-        }
-
-    }
-
-    SUBCASE("Tree node sizes") {
-        std::vector<std::shared_ptr<cis::Surface::Division>> q = { s.root() };
-        while (q.size()) {
-            std::shared_ptr<cis::Surface::Division> curr = q.back();
-            q.pop_back();
-            if (curr->size() > 1) {
-                int size = 0;
-                if (curr->left()) {
-                    size += curr->left()->size();
-                    q.push_back(curr->left());
-                }
-                if (curr->right()) {
-                    size += curr->right()->size();
-                    q.push_back(curr->right());
-                }
-                CHECK(size == curr->size() - 1);
-            }
-        }
-    }
-
-    SUBCASE("Closest Point") {
-        //Generate random points with x >= 1, 1 >= y > 0, 2 >= z >= 0 (project onto face of prism)
-        std::default_random_engine generator;
-
-        std::uniform_real_distribution<double> range_distribution(1.0,20.0);
-        std::uniform_real_distribution<double> step_distribution(0.0,1.0);
-        std::uniform_real_distribution<double> z_distribution(0.0,2.0);
-        cis::PointCloud pc1;
-
-        for (int j = 0; j < 5; j++) {
-            cis::Point toAdd = {range_distribution(generator), step_distribution(generator), z_distribution(generator)};
-            pc1.add_point(toAdd);
-        }
-
-        //Generate random points with 1 >= x >= 0 , y >= 1, 2 >= z >= 0 (project onto another face of prism
-        cis::PointCloud pc2;
-        for (int j = 0; j < 5; j++) {
-            cis::Point toAdd = {step_distribution(generator), range_distribution(generator), z_distribution(generator)};
-            pc2.add_point(toAdd);
-        }
-
-        //Generate random point x >=1, y >=1, 2 >= z >= 0 (project onto an edge of the prism
-        cis::PointCloud pc3;
-        for (int j = 0; j < 5; j++) {
-            cis::Point toAdd = {range_distribution(generator), range_distribution(generator), z_distribution(generator)};
-            pc3.add_point(toAdd);
-        }
-
-        //For each of the test point clouds, check to confirm that the expected closest point is determined
-        //pc1 : in the form (1,y,z)
-        for (size_t i = 0; i < pc1.size(); i++ ) {
-            auto c = s.root()->find_closest_point(pc1.at(i));
-            CHECK(c(0) == 1);
-            c(0) = pc1.at(i)(0);
-            CHECK(c.isApprox(pc1.at(i)));
-        }
-
-        //pc2: in the form (x,1,z)
-        for (size_t i = 0; i < pc2.size(); i++ ) {
-            auto c = s.root()->find_closest_point(pc2.at(i));
-            CHECK(c(1) == 1);
-            c(1) = pc2.at(i)(1);
-            CHECK(c.isApprox(pc2.at(i)));
-        }
-
-        //pc3: in the form (1,1,z)
-        for (size_t i = 0; i < pc3.size(); i++ ) {
-            auto c = s.root()->find_closest_point(pc3.at(i));
-            CHECK(c(0) == 1);
-            CHECK(c(1) == 1);
-            c(0) = pc3.at(i)(0);
-            c(1) = pc3.at(i)(1);
-            CHECK(c.isApprox(pc3.at(i)));
-        }
-
-
-    }
-
-
-    remove(tmpfile.c_str());
 }

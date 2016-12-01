@@ -106,17 +106,16 @@ void find_closest(const int argc, const char *argv[]) {
     cis::PointCloud d = cis::pointer_to_fixed(bodyA, bodyB, samples.pointer_rigid_body(), samples.fixed_rigid_body());
 
     //Use ICP to find best registration transformation between rigid body and CT
-    Eigen::Transform<double, 3, Eigen::Affine> F_reg = cis::icp(d,sur);
+    Eigen::Transform<double, 3, Eigen::Affine> F_reg = cis::icp(d, sur);
 
     cis::PointCloud closest_points;
     cis::PointCloud s;
-    cis::Surface surface(sur.cat_triangles(), sur.neighbor_triangles());
     for (size_t p = 0; p < d.size(); ++p) {
         s.add_point(F_reg * d.at(p));
         #ifdef CIS_ICP_USE_NAIVE
         closest_points.add_point(cis::project_onto_surface_naive(F_reg * d.at(p), sur));
         #else
-        closest_points.add_point(cis::project_onto_surface_kdtree(F_reg * d.at(p), surface));
+        closest_points.add_point(cis::project_onto_surface_kdtree(F_reg * d.at(p), sur.surface()));
         #endif
         /**
          * PA3

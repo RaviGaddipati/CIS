@@ -39,7 +39,7 @@ namespace cis {
      * @param surfaceFile Surface file to register to
      * @return The estimated registration transformation following ICP
      */
-    Eigen::Transform<double, 3, Eigen::Affine> icp(const PointCloud &q, const SurfaceFile &surfaceFile);
+    Eigen::Transform<double, 3, Eigen::Affine> icp(const PointCloud &q, SurfaceFile &surfaceFile);
 
     Point project_onto_surface_kdtree(const Point &p, std::shared_ptr<Surface::Division> root);
 
